@@ -10,7 +10,6 @@ USERNAME = st.secrets["login_credentials"]["username"]
 PASSWORD = st.secrets["login_credentials"]["password"]
 
 
-
 def login() -> bool:
     if "logged_in" not in st.session_state:
         st.session_state.logged_in = False

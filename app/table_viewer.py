@@ -1,35 +1,6 @@
 import streamlit as st
-import pandas as pd
 import boto3
-import time
 
-def run_athena_query(query):
-    # Initialize a session using Boto3
-    session = boto3.Session()
-    athena_client = session.client("athena", region_name="eu-west-2")
-
-    # Define the parameters for the query execution
-    response = athena_client.start_query_execution(
-        QueryString=query,
-        QueryExecutionContext={"Database": "rtg_automotive"},
-        WorkGroup="rtg-automotive-workgroup",
-    )
-
-    query_execution_id = response["QueryExecutionId"]
-    # Wait for the query to complete
-    while True:
-        query_status = athena_client.get_query_execution(
-            QueryExecutionId=query_execution_id
-        )
-        status = query_status["QueryExecution"]["Status"]["State"]
-        if status in ["SUCCEEDED", "FAILED", "CANCELLED"]:
-            break
-
-    if status == "SUCCEEDED":
-        return athena_client.get_query_results(QueryExecutionId=query_execution_id)
-    else:
-        st.error(f"Query failed with status: {status}")
-        return []
 
 def format_query_results(results):
     # Check if results are empty
