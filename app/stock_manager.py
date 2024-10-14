@@ -168,7 +168,7 @@ def app_stock_manager(stage, aws_account_id):
     else:
         role = "DevAdminRole"
 
-    st.title("eBay Store Upload Generator")
+    st.title("Stock Manager")
     get_credentials(aws_account_id, role)
 
     s3_client = boto3.client(

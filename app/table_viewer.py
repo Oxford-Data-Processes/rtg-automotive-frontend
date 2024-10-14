@@ -50,34 +50,60 @@ def format_query_results(results):
         return []
 
 def app_table_viewer():
-    st.title("Athena Query Results")
+    st.title("Table Viewer")
 
     # Define queries
-    queries = {
-        "Load Product Data": """
-            SELECT custom_label, part_number, supplier
+    config = {
+        "product": {
+            "query": """
+            SELECT *
             FROM "rtg_automotive"."product"
+            WHERE {filter_column} = {filter_value}
             LIMIT 10
-        """,
-        "Load Store Data": """
-            SELECT item_id, custom_label, supplier, ebay_store
+            """,
+            "filter_columns": [{"name": "custom_label", "type": "text"}, {"name": "part_number", "type": "text"}, {"name": "supplier", "type": "text"}],
+        },
+        "store": {
+            "query": """
+            SELECT *
             FROM "rtg_automotive"."store"
+            WHERE {filter_column} = {filter_value}
             LIMIT 10
-        """,
-        "Load Supplier Stock Data": """
-            SELECT part_number, supplier, updated_date
+            """,
+            "filter_columns": [{"name": "item_id", "type": "integer"}, {"name": "custom_label", "type": "text"}, {"name": "supplier", "type": "text"}, {"name": "ebay_store", "type": "text"}],
+        },
+        "supplier_stock": {
+            "query": """
+            SELECT *
             FROM "rtg_automotive"."supplier_stock"
+            WHERE {filter_column} = {filter_value}
             LIMIT 10
-        """
+            """,
+            "filter_columns": [{"name": "part_number", "type": "text"}, {"name": "supplier", "type": "text"}, {"name": "updated_date", "type": "text"}],
+        },
     }
 
-    # Load data for each query
-    for button_label, query in queries.items():
-        if st.button(button_label):
-            results = run_athena_query(query)
-            if results:
-                formatted_results = format_query_results(results)  # Format the results
-                st.write(pd.DataFrame(formatted_results))  # Use formatted results
+    # User selects a table
+    table_selection = st.selectbox("Select a table", options=list(config.keys()))
+    
+    # User selects a filter column
+    filter_columns = config[table_selection]["filter_columns"]
+    filter_column_names = [col["name"] for col in filter_columns]
+    selected_filter_column = st.selectbox("Select a filter column", options=filter_column_names)
+    
+    # User selects a value for the selected filter column
+    filter_column_type = next(col["type"] for col in filter_columns if col["name"] == selected_filter_column)
+    if filter_column_type == "text":
+        filter_value = st.text_input(f"Enter value for {selected_filter_column}")
+    elif filter_column_type == "integer":
+        filter_value = st.number_input(f"Enter value for {selected_filter_column}", format="%d")
+    
+    # Execute query if a value is provided
+    if st.button("Run Query") and filter_value:
+        query = config[table_selection]["query"].format(filter_column=selected_filter_column, filter_value=f"'{filter_value}'" if filter_column_type == "text" else filter_value)
+        results = run_athena_query(query)
+        formatted_results = format_query_results(results)
+        import pandas as pd
+        df_results = pd.DataFrame(formatted_results)
+        st.dataframe(df_results)
 
-if __name__ == "__main__":
-    app_table_viewer()
