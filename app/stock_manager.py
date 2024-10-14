@@ -53,20 +53,24 @@ def upload_file_to_s3(file, bucket_name, date, s3_client):
     year = date.split("-")[0]
     month = date.split("-")[1]
     day = date.split("-")[2]
-    s3_client.put_object(
-        Bucket=bucket_name,
+    try:
+        s3_client.put_object(
+            Bucket=bucket_name,
         Key=f"stock_feed/year={year}/month={month}/day={day}/{file.name.replace(' ','_')}",
         Body=file.getvalue(),
-    )
-    st.success(f"File {file.name} uploaded successfully, processing...")
+        )
+    except Exception as e:
+        st.error(f"Error uploading file: {str(e)}")
 
 
 def handle_file_uploads(uploaded_files, stock_feed_bucket_name, date, s3_client, sqs_queue_url):
     if uploaded_files:
         for uploaded_file in uploaded_files:
             upload_file_to_s3(uploaded_file, stock_feed_bucket_name, date, s3_client)
+        st.success("Files uploaded successfully")
         time.sleep(len(uploaded_files) * 4)
         messages = get_all_sqs_messages(sqs_queue_url)[-len(uploaded_files):]
+        st.write("--------------------------------------------------")
         for message in messages:
             if 'success' in message["message"].lower():
                 st.success(message["message"])
