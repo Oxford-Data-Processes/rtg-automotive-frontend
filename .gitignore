@@ -9,7 +9,8 @@ __pycache__/
 # Streamlit
 .streamlit/
 
-
+# dev container
+.devcontainer/
 
 # Distribution / packaging
 .Python
