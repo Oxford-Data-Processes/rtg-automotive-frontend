@@ -5,6 +5,27 @@ import re
 import pandas as pd
 from io import BytesIO
 import streamlit as st
+from datetime import datetime
+import json
+import pytz
+
+
+def log_action(bucket_name, action, user):
+    s3_client = boto3.client("s3")
+
+    timestamp = datetime.now().isoformat()
+    log_entry = {"timestamp": timestamp, "action": action, "user": user}
+
+    london_tz = pytz.timezone("Europe/London")
+    log_file_name = f"logs/{datetime.now(london_tz).strftime('%Y-%m-%dT%H:%M:%S')}.json"
+
+    s3_client.put_object(
+        Bucket=bucket_name,
+        Key=log_file_name,
+        Body=json.dumps([log_entry]) + "\n",
+        ContentType="application/json",
+    )
+
 
 def get_credentials(aws_account_id, role):
     role_arn = f"arn:aws:iam::{aws_account_id}:role/{role}"
@@ -76,6 +97,7 @@ def get_all_sqs_messages(queue_url):
 
     return all_messages
 
+
 def load_csv_from_s3(bucket_name, csv_key, s3_client):
     csv_object = s3_client.get_object(Bucket=bucket_name, Key=csv_key)
     csv_data = csv_object["Body"].read()
@@ -110,7 +132,7 @@ def run_athena_query(query):
     else:
         st.error(f"Query failed with status: {status}")
         return []
-    
+
 
 def trigger_lambda_function(function_name: str, aws_account_id: str) -> bool:
     lambda_client = boto3.client(

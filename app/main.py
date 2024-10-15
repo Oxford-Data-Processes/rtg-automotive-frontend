@@ -3,6 +3,7 @@ from stock_manager import app_stock_manager
 from table_viewer import app_table_viewer
 from config_viewer import app_config_viewer
 from bulk_item_uploader import app_bulk_item_uploader
+from log_viewer import app_log_viewer
 
 AWS_ACCOUNT_ID = st.secrets["aws_credentials"]["AWS_ACCOUNT_ID"]
 STAGE = st.secrets["aws_credentials"]["STAGE"]
@@ -35,7 +36,13 @@ if __name__ == "__main__":
         st.sidebar.title("Navigation")
         app_mode = st.sidebar.selectbox(
             "Choose the app",
-            ("Stock Manager", "Table Viewer", "Config Viewer", "Bulk Item Uploader"),
+            (
+                "Stock Manager",
+                "Table Viewer",
+                "Config Viewer",
+                "Bulk Item Uploader",
+                "Log Viewer",
+            ),
         )
 
         if app_mode == "Stock Manager":
@@ -46,3 +53,5 @@ if __name__ == "__main__":
             app_config_viewer(AWS_ACCOUNT_ID)
         elif app_mode == "Bulk Item Uploader":
             app_bulk_item_uploader(AWS_ACCOUNT_ID)
+        elif app_mode == "Log Viewer":
+            app_log_viewer(AWS_ACCOUNT_ID)

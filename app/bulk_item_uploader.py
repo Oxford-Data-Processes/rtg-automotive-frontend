@@ -3,6 +3,7 @@ import pandas as pd
 from io import BytesIO
 import boto3
 import os
+from aws import log_action
 
 
 def get_expected_schema():
@@ -80,10 +81,12 @@ def update_database(df, aws_account_id):
             )
             if combined_data is not None:
                 upload_data(s3_client, bucket_name, file_path, combined_data)
+                st.success(
+                    f"Uploaded {len(group)} items for supplier: {supplier} ebay_store: {ebay_store}"
+                )
+
         except s3_client.exceptions.ClientError as e:
             handle_file_not_found(s3_client, e, bucket_name, file_path, group)
-
-    st.success("Data uploaded to the database successfully!")
 
 
 def create_s3_client():
@@ -122,6 +125,7 @@ def upload_data(s3_client, bucket_name, file_path, combined_data):
     s3_client.put_object(
         Bucket=bucket_name, Key=file_path, Body=parquet_buffer.getvalue()
     )
+    log_action(bucket_name, "DATA_UPLOADED", "admin")
 
 
 def handle_file_not_found(s3_client, e, bucket_name, file_path, group):
@@ -134,7 +138,7 @@ def handle_file_not_found(s3_client, e, bucket_name, file_path, group):
             Bucket=bucket_name, Key=file_path, Body=parquet_buffer.getvalue()
         )
     else:
-        st.error("An error occurred while accessing S3: {}".format(e))
+        st.error(f"An error occurred while accessing S3: {e}")
 
 
 def app_bulk_item_uploader(aws_account_id):
