@@ -25,7 +25,7 @@ def get_expected_schema():
 
 def display_expected_schema(expected_schema):
     with st.expander("Expected Schema", expanded=False):
-        st.dataframe(pd.DataFrame(expected_schema).T)
+        st.dataframe(pd.DataFrame(expected_schema).T, use_container_width=True)
 
 
 def validate_schema(df, expected_schema):
