@@ -8,18 +8,18 @@ from aws import log_action
 
 def get_expected_schema():
     return [
-        {"Name": "item_id", "Type": "bigint", "DisplayType": "integer"},
-        {"Name": "custom_label", "Type": "string", "DisplayType": "text"},
-        {"Name": "title", "Type": "string", "DisplayType": "text"},
-        {"Name": "current_price", "Type": "double", "DisplayType": "decimal number"},
-        {"Name": "prefix", "Type": "string or null", "DisplayType": "text"},
-        {"Name": "uk_rtg", "Type": "string", "DisplayType": "text"},
-        {"Name": "fps_wds_dir", "Type": "string", "DisplayType": "text"},
-        {"Name": "payment_profile_name", "Type": "string", "DisplayType": "text"},
-        {"Name": "shipping_profile_name", "Type": "string", "DisplayType": "text"},
-        {"Name": "return_profile_name", "Type": "string", "DisplayType": "text"},
-        {"Name": "supplier", "Type": "string", "DisplayType": "text"},
-        {"Name": "ebay_store", "Type": "string", "DisplayType": "text"},
+        {"Name": "item_id", "Type": "bigint", "Display Type": "integer"},
+        {"Name": "custom_label", "Type": "string", "Display Type": "text"},
+        {"Name": "title", "Type": "string", "Display Type": "text"},
+        {"Name": "current_price", "Type": "double", "Display Type": "decimal number"},
+        {"Name": "prefix", "Type": "string or null", "Display Type": "text"},
+        {"Name": "uk_rtg", "Type": "string", "Display Type": "text"},
+        {"Name": "fps_wds_dir", "Type": "string", "Display Type": "text"},
+        {"Name": "payment_profile_name", "Type": "string", "Display Type": "text"},
+        {"Name": "shipping_profile_name", "Type": "string", "Display Type": "text"},
+        {"Name": "return_profile_name", "Type": "string", "Display Type": "text"},
+        {"Name": "supplier", "Type": "string", "Display Type": "text"},
+        {"Name": "ebay_store", "Type": "string", "Display Type": "text"},
     ]
 
 
