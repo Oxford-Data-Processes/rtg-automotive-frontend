@@ -1,6 +1,7 @@
 import streamlit as st
 from stock_manager import app_stock_manager
 from table_viewer import app_table_viewer
+from config_viewer import app_config_viewer
 
 AWS_ACCOUNT_ID = st.secrets["aws_credentials"]["AWS_ACCOUNT_ID"]
 STAGE = st.secrets["aws_credentials"]["STAGE"]
@@ -32,10 +33,12 @@ if __name__ == "__main__":
     if login():
         st.sidebar.title("Navigation")
         app_mode = st.sidebar.selectbox(
-            "Choose the app", ("Stock Manager", "Table Viewer")
+            "Choose the app", ("Stock Manager", "Table Viewer", "Config Viewer")
         )
 
         if app_mode == "Stock Manager":
             app_stock_manager(STAGE, AWS_ACCOUNT_ID)
         elif app_mode == "Table Viewer":
             app_table_viewer()
+        elif app_mode == "Config Viewer":
+            app_config_viewer(AWS_ACCOUNT_ID)
