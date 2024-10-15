@@ -8,18 +8,18 @@ from aws import log_action
 
 def get_expected_schema():
     return [
-        {"Name": "item_id", "Type": "bigint"},
-        {"Name": "custom_label", "Type": "string"},
-        {"Name": "title", "Type": "string"},
-        {"Name": "current_price", "Type": "double"},
-        {"Name": "prefix", "Type": "string or null"},
-        {"Name": "uk_rtg", "Type": "string"},
-        {"Name": "fps_wds_dir", "Type": "string"},
-        {"Name": "payment_profile_name", "Type": "string"},
-        {"Name": "shipping_profile_name", "Type": "string"},
-        {"Name": "return_profile_name", "Type": "string"},
-        {"Name": "supplier", "Type": "string"},
-        {"Name": "ebay_store", "Type": "string"},
+        {"Name": "item_id", "Type": "bigint", "DisplayType": "integer"},
+        {"Name": "custom_label", "Type": "string", "DisplayType": "text"},
+        {"Name": "title", "Type": "string", "DisplayType": "text"},
+        {"Name": "current_price", "Type": "double", "DisplayType": "decimal number"},
+        {"Name": "prefix", "Type": "string or null", "DisplayType": "text"},
+        {"Name": "uk_rtg", "Type": "string", "DisplayType": "text"},
+        {"Name": "fps_wds_dir", "Type": "string", "DisplayType": "text"},
+        {"Name": "payment_profile_name", "Type": "string", "DisplayType": "text"},
+        {"Name": "shipping_profile_name", "Type": "string", "DisplayType": "text"},
+        {"Name": "return_profile_name", "Type": "string", "DisplayType": "text"},
+        {"Name": "supplier", "Type": "string", "DisplayType": "text"},
+        {"Name": "ebay_store", "Type": "string", "DisplayType": "text"},
     ]
 
 
