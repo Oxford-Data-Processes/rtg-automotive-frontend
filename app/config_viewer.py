@@ -1,17 +1,6 @@
-import streamlit as st
-
 import json
-import boto3
-
-
-def get_s3_client():
-    return boto3.client(
-        "s3",
-        region_name="eu-west-2",
-        aws_access_key_id=st.secrets["aws_credentials"]["AWS_ACCESS_KEY_ID"],
-        aws_secret_access_key=st.secrets["aws_credentials"]["AWS_SECRET_ACCESS_KEY"],
-        aws_session_token=st.secrets["aws_credentials"].get("AWS_SESSION_TOKEN"),
-    )
+import streamlit as st
+from aws import get_s3_client
 
 
 def load_json_from_s3(bucket_name, json_key):

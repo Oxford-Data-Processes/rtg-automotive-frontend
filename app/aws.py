@@ -152,3 +152,13 @@ def trigger_lambda_function(function_name: str, aws_account_id: str) -> bool:
     except Exception as e:
         st.error(f"Error: {str(e)}")
         return False
+
+
+def get_s3_client():
+    return boto3.client(
+        "s3",
+        region_name="eu-west-2",
+        aws_access_key_id=st.secrets["aws_credentials"]["AWS_ACCESS_KEY_ID"],
+        aws_secret_access_key=st.secrets["aws_credentials"]["AWS_SECRET_ACCESS_KEY"],
+        aws_session_token=st.secrets["aws_credentials"].get("AWS_SESSION_TOKEN"),
+    )
