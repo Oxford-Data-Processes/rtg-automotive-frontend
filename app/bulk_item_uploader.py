@@ -125,7 +125,7 @@ def upload_data(s3_client, bucket_name, file_path, combined_data):
     s3_client.put_object(
         Bucket=bucket_name, Key=file_path, Body=parquet_buffer.getvalue()
     )
-    log_action(bucket_name, "DATA_UPLOADED", "admin")
+    log_action(bucket_name, f"BULK_ITEM_UPLOADED | file_path={file_path}", "admin")
 
 
 def handle_file_not_found(s3_client, e, bucket_name, file_path, group):
