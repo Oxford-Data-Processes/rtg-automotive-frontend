@@ -27,27 +27,27 @@ def log_action(bucket_name, action, user):
     )
 
 
-def get_credentials(aws_account_id, role):
-    role_arn = f"arn:aws:iam::{aws_account_id}:role/{role}"
-    session_name = f"MySession-{int(time.time())}"
+# def get_credentials(aws_account_id, role):
+#     role_arn = f"arn:aws:iam::{aws_account_id}:role/{role}"
+#     session_name = f"MySession-{int(time.time())}"
 
-    sts_client = boto3.client(
-        "sts",
-        aws_access_key_id=st.secrets["aws_credentials"]["AWS_ACCESS_KEY_ID"],
-        aws_secret_access_key=st.secrets["aws_credentials"]["AWS_SECRET_ACCESS_KEY"],
-    )
+#     sts_client = boto3.client(
+#         "sts",
+#         aws_access_key_id=st.secrets["aws_credentials"]["AWS_ACCESS_KEY_ID"],
+#         aws_secret_access_key=st.secrets["aws_credentials"]["AWS_SECRET_ACCESS_KEY"],
+#     )
 
-    # Assume the role
-    response = sts_client.assume_role(RoleArn=role_arn, RoleSessionName=session_name)
-    # Extract the credentials
-    credentials = response["Credentials"]
-    access_key_id = credentials["AccessKeyId"]
-    secret_access_key = credentials["SecretAccessKey"]
-    session_token = credentials["SessionToken"]
+#     # Assume the role
+#     response = sts_client.assume_role(RoleArn=role_arn, RoleSessionName=session_name)
+#     # Extract the credentials
+#     credentials = response["Credentials"]
+#     access_key_id = credentials["AccessKeyId"]
+#     secret_access_key = credentials["SecretAccessKey"]
+#     session_token = credentials["SessionToken"]
 
-    os.environ["AWS_ACCESS_KEY_ID"] = access_key_id
-    os.environ["AWS_SECRET_ACCESS_KEY"] = secret_access_key
-    os.environ["AWS_SESSION_TOKEN"] = session_token
+#     os.environ["AWS_ACCESS_KEY_ID"] = access_key_id
+#     os.environ["AWS_SECRET_ACCESS_KEY"] = secret_access_key
+#     os.environ["AWS_SESSION_TOKEN"] = session_token
 
 
 def get_last_csv_from_s3(bucket_name, prefix, s3_client):
