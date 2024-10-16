@@ -8,10 +8,9 @@ import io
 import zipfile
 from aws import (
     get_last_csv_from_s3,
-    load_csv_from_s3,
     trigger_lambda_function,
 )
-from aws_utils import iam, sqs
+from aws_utils import iam, sqs, s3
 
 
 def zip_dataframes(dataframes: List[Tuple[pd.DataFrame, str]]) -> io.BytesIO:
@@ -97,7 +96,10 @@ def generate_ebay_upload_files(stage, aws_account_id, project_bucket_name, s3_cl
             project_bucket_name, "athena-results/", s3_client
         )
         if last_csv_key:
-            df = load_csv_from_s3(project_bucket_name, last_csv_key, s3_client)
+            s3_client = s3.S3Client()
+            df = s3_client.load_csv_from_s3(
+                project_bucket_name, last_csv_key, s3_client
+            )
             ebay_df = create_ebay_dataframe(df)
             stores = list(ebay_df["Store"].unique())
             ebay_dfs = [
