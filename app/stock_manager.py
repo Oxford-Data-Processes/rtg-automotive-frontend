@@ -1,4 +1,3 @@
-import boto3
 import streamlit as st
 import os
 import time
@@ -9,11 +8,10 @@ import zipfile
 from aws_utils import iam, sqs, s3, aws_lambda
 
 
-def get_last_csv_from_s3(bucket_name, prefix, s3_client):
-    response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
-    csv_files = [
-        obj for obj in response.get("Contents", []) if obj["Key"].endswith(".csv")
-    ]
+def get_last_csv_from_s3(bucket_name, prefix, s3_handler):
+
+    response = s3_handler.list_objects(bucket_name, prefix)
+    csv_files = [obj for obj in response if obj["Key"].endswith(".csv")]
     csv_files.sort(key=lambda x: x["LastModified"], reverse=True)
     return csv_files[0]["Key"] if csv_files else None
 
@@ -58,26 +56,25 @@ def create_ebay_dataframe(ebay_df: pd.DataFrame) -> pd.DataFrame:
     return ebay_df
 
 
-def upload_file_to_s3(file, bucket_name, date, s3_client):
+def upload_file_to_s3(file, bucket_name, date, s3_handler):
     year = date.split("-")[0]
     month = date.split("-")[1]
     day = date.split("-")[2]
+    file_path = (
+        f"stock_feed/year={year}/month={month}/day={day}/{file.name.replace(' ','_')}"
+    )
     try:
-        s3_client.put_object(
-            Bucket=bucket_name,
-            Key=f"stock_feed/year={year}/month={month}/day={day}/{file.name.replace(' ','_')}",
-            Body=file.getvalue(),
-        )
+        s3_handler.upload_excel_to_s3(bucket_name, file_path, file.getvalue())
     except Exception as e:
         st.error(f"Error uploading file: {str(e)}")
 
 
 def handle_file_uploads(
-    uploaded_files, stock_feed_bucket_name, date, s3_client, sqs_queue_url
+    uploaded_files, stock_feed_bucket_name, date, s3_handler, sqs_queue_url
 ):
     if uploaded_files:
         for uploaded_file in uploaded_files:
-            upload_file_to_s3(uploaded_file, stock_feed_bucket_name, date, s3_client)
+            upload_file_to_s3(uploaded_file, stock_feed_bucket_name, date, s3_handler)
         st.success("Files uploaded successfully")
         time.sleep(len(uploaded_files) * 4)
         sqs_handler = sqs.SQSHandler()
@@ -94,7 +91,7 @@ def handle_file_uploads(
         st.warning("Please upload at least one file first.")
 
 
-def generate_ebay_upload_files(stage, aws_account_id, project_bucket_name, s3_client):
+def generate_ebay_upload_files(stage, aws_account_id, project_bucket_name, s3_handler):
     aws_credentials = iam.AWSCredentials(
         aws_access_key_id=st.secrets["aws_credentials"]["AWS_ACCESS_KEY_ID"],
         aws_secret_access_key=st.secrets["aws_credentials"]["AWS_SECRET_ACCESS_KEY"],
@@ -107,15 +104,9 @@ def generate_ebay_upload_files(stage, aws_account_id, project_bucket_name, s3_cl
     lambda_handler = aws_lambda.LambdaHandler()
     if lambda_handler.trigger_lambda_function(function_name):
         last_csv_key = get_last_csv_from_s3(
-            project_bucket_name, "athena-results/", s3_client
+            project_bucket_name, "athena-results/", s3_handler
         )
         if last_csv_key:
-            s3_handler = s3.S3Handler(
-                os.environ["AWS_ACCESS_KEY_ID"],
-                os.environ["AWS_SECRET_ACCESS_KEY"],
-                os.environ["AWS_SESSION_TOKEN"],
-                "eu-west-2",
-            )
 
             data = s3_handler.load_csv_from_s3(project_bucket_name, last_csv_key)
             df = pd.DataFrame(data[1:], columns=data[0])
@@ -149,12 +140,11 @@ def app_stock_manager(stage, aws_account_id):
 
     aws_credentials.get_aws_credentials()
 
-    s3_client = boto3.client(
-        "s3",
-        aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
-        aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
-        aws_session_token=os.environ["AWS_SESSION_TOKEN"],
-        region_name="eu-west-2",
+    s3_handler = s3.S3Handler(
+        os.environ["AWS_ACCESS_KEY_ID"],
+        os.environ["AWS_SECRET_ACCESS_KEY"],
+        os.environ["AWS_SESSION_TOKEN"],
+        "eu-west-2",
     )
 
     sqs_queue_url = (
@@ -172,10 +162,10 @@ def app_stock_manager(stage, aws_account_id):
 
     if st.button("Upload Files") and date:
         handle_file_uploads(
-            uploaded_files, stock_feed_bucket_name, date, s3_client, sqs_queue_url
+            uploaded_files, stock_feed_bucket_name, date, s3_handler, sqs_queue_url
         )
 
     if st.button("Generate eBay Store Upload Files"):
         generate_ebay_upload_files(
-            stage, aws_account_id, project_bucket_name, s3_client
+            stage, aws_account_id, project_bucket_name, s3_handler
         )

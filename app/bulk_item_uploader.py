@@ -1,9 +1,8 @@
 import streamlit as st
 import pandas as pd
 from io import BytesIO
-import boto3
 import os
-from aws_utils import logs
+from aws_utils import logs, s3
 
 
 def get_expected_schema():
@@ -68,40 +67,40 @@ def display_validation_results(errors, df):
 
 def update_database(df, aws_account_id):
     suppliers = df.groupby(["supplier", "ebay_store"])
-    s3_client = boto3.client(
-        "s3",
-        aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
-        aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
-        aws_session_token=os.environ["AWS_SESSION_TOKEN"],
-    )
     bucket_name = f"rtg-automotive-bucket-{aws_account_id}"
 
     st.write(f"Uploading {len(df)} items to the database...")
+
+    s3_handler = s3.S3Handler(
+        os.environ["AWS_ACCESS_KEY_ID"],
+        os.environ["AWS_SECRET_ACCESS_KEY"],
+        os.environ["AWS_SESSION_TOKEN"],
+        "eu-west-2",
+    )
 
     for (supplier, ebay_store), group in suppliers:
         file_path = create_file_path(ebay_store, supplier)
         try:
             combined_data = handle_existing_file(
-                s3_client, bucket_name, file_path, group
+                s3_handler, bucket_name, file_path, group
             )
             if combined_data is not None:
-                upload_data(s3_client, bucket_name, file_path, combined_data)
+                upload_data(s3_handler, bucket_name, file_path, combined_data)
                 st.success(
                     f"Uploaded {len(group)} items for supplier: {supplier} ebay_store: {ebay_store}"
                 )
 
-        except s3_client.exceptions.ClientError as e:
-            handle_file_not_found(s3_client, e, bucket_name, file_path, group)
+        except Exception as e:
+            handle_file_not_found(s3_handler, e, bucket_name, file_path, group)
 
 
 def create_file_path(ebay_store, supplier):
     return f"store/ebay_store={ebay_store}/supplier={supplier}/data.parquet"
 
 
-def handle_existing_file(s3_client, bucket_name, file_path, group):
-    s3_client.head_object(Bucket=bucket_name, Key=file_path)
-    response = s3_client.get_object(Bucket=bucket_name, Key=file_path)
-    existing_data = pd.read_parquet(BytesIO(response["Body"].read()))
+def handle_existing_file(s3_handler, bucket_name, file_path, group):
+    parquet_data = s3_handler.load_parquet_from_s3(bucket_name, file_path)
+    existing_data = pd.read_parquet(BytesIO(parquet_data))
     combined_data = pd.concat([existing_data, group])
 
     if combined_data["item_id"].duplicated().any():
@@ -113,28 +112,25 @@ def handle_existing_file(s3_client, bucket_name, file_path, group):
     return combined_data
 
 
-def upload_data(s3_client, bucket_name, file_path, combined_data):
+def upload_data(s3_handler, bucket_name, file_path, combined_data):
     parquet_buffer = BytesIO()
     combined_data.to_parquet(parquet_buffer, index=False)
     parquet_buffer.seek(0)
 
-    s3_client.put_object(
-        Bucket=bucket_name, Key=file_path, Body=parquet_buffer.getvalue()
-    )
+    s3_handler.upload_parquet_to_s3(bucket_name, file_path, parquet_buffer.getvalue())
     logs_handler = logs.LogsHandler()
     logs_handler.log_action(
-        bucket_name, f"BULK_ITEM_UPLOADED | file_path={file_path}", "admin"
+        bucket_name, "frontend", f"BULK_ITEM_UPLOADED | file_path={file_path}", "admin"
     )
 
 
-def handle_file_not_found(s3_client, e, bucket_name, file_path, group):
+def handle_file_not_found(s3_handler, e, bucket_name, file_path, group):
     if e.response["Error"]["Code"] == "404":
         parquet_buffer = BytesIO()
         group.to_parquet(parquet_buffer, index=False)
         parquet_buffer.seek(0)
-
-        s3_client.put_object(
-            Bucket=bucket_name, Key=file_path, Body=parquet_buffer.getvalue()
+        s3_handler.upload_parquet_to_s3(
+            bucket_name, file_path, parquet_buffer.getvalue()
         )
     else:
         st.error(f"An error occurred while accessing S3: {e}")
