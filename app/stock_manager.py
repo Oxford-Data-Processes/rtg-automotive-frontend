@@ -9,10 +9,9 @@ import zipfile
 from aws import (
     get_last_csv_from_s3,
     load_csv_from_s3,
-    get_all_sqs_messages,
     trigger_lambda_function,
 )
-from aws_utils import iam
+from aws_utils import iam, sqs
 
 
 def zip_dataframes(dataframes: List[Tuple[pd.DataFrame, str]]) -> io.BytesIO:
@@ -77,7 +76,10 @@ def handle_file_uploads(
             upload_file_to_s3(uploaded_file, stock_feed_bucket_name, date, s3_client)
         st.success("Files uploaded successfully")
         time.sleep(len(uploaded_files) * 4)
-        messages = get_all_sqs_messages(sqs_queue_url)[-len(uploaded_files) :]
+        sqs_handler = sqs.SQSHandler()
+        messages = sqs_handler.get_all_sqs_messages(sqs_queue_url)[
+            -len(uploaded_files) :
+        ]
         st.write("--------------------------------------------------")
         for message in messages:
             if "success" in message["message"].lower():

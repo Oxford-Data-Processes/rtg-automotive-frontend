@@ -59,43 +59,43 @@ def get_last_csv_from_s3(bucket_name, prefix, s3_client):
     return csv_files[0]["Key"] if csv_files else None
 
 
-def extract_datetime_from_sns_message(message):
-    # Regular expression to find the datetime in the message
-    match = re.search(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}", message)
-    return match.group(0) if match else None
+# def extract_datetime_from_sns_message(message):
+#     # Regular expression to find the datetime in the message
+#     match = re.search(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}", message)
+#     return match.group(0) if match else None
 
 
-def get_all_sqs_messages(queue_url):
-    sqs_client = boto3.client(
-        "sqs",
-        region_name="eu-west-2",
-        aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
-        aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
-        aws_session_token=os.environ["AWS_SESSION_TOKEN"],
-    )
-    all_messages = []
-    while True:
-        # Receive messages from the SQS queue
-        response = sqs_client.receive_message(
-            QueueUrl=queue_url,
-            MaxNumberOfMessages=10,
-            WaitTimeSeconds=5,
-            MessageAttributeNames=["All"],
-        )
+# def get_all_sqs_messages(queue_url):
+#     sqs_client = boto3.client(
+#         "sqs",
+#         region_name="eu-west-2",
+#         aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
+#         aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
+#         aws_session_token=os.environ["AWS_SESSION_TOKEN"],
+#     )
+#     all_messages = []
+#     while True:
+#         # Receive messages from the SQS queue
+#         response = sqs_client.receive_message(
+#             QueueUrl=queue_url,
+#             MaxNumberOfMessages=10,
+#             WaitTimeSeconds=5,
+#             MessageAttributeNames=["All"],
+#         )
 
-        # Check if there are any messages
-        messages = response.get("Messages", [])
-        if not messages:
-            break  # Exit the loop if no more messages
+#         # Check if there are any messages
+#         messages = response.get("Messages", [])
+#         if not messages:
+#             break  # Exit the loop if no more messages
 
-        for message in messages:
-            timestamp = extract_datetime_from_sns_message(message["Body"])
-            message_body = message["Body"]
-            all_messages.append({"timestamp": timestamp, "message": message_body})
+#         for message in messages:
+#             timestamp = extract_datetime_from_sns_message(message["Body"])
+#             message_body = message["Body"]
+#             all_messages.append({"timestamp": timestamp, "message": message_body})
 
-    all_messages.sort(key=lambda x: x["timestamp"])
+#     all_messages.sort(key=lambda x: x["timestamp"])
 
-    return all_messages
+#     return all_messages
 
 
 def load_csv_from_s3(bucket_name, csv_key, s3_client):
