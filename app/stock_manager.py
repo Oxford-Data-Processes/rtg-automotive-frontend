@@ -49,7 +49,7 @@ def create_ebay_dataframe(ebay_df: pd.DataFrame) -> pd.DataFrame:
         ]
     ]
     ebay_df["Quantity"] = ebay_df["Quantity"].astype(int)
-    ebay_df["ItemID"] = ebay_df["ItemID"].astype(int)
+    ebay_df["ItemID"] = ebay_df["ItemID"].apply(lambda x: int(x) if x != "" else None)
     return ebay_df
 
 
@@ -90,16 +90,29 @@ def handle_file_uploads(
 
 
 def generate_ebay_upload_files(stage, aws_account_id, project_bucket_name, s3_client):
+    aws_credentials = iam.AWSCredentials(
+        aws_access_key_id=st.secrets["aws_credentials"]["AWS_ACCESS_KEY_ID"],
+        aws_secret_access_key=st.secrets["aws_credentials"]["AWS_SECRET_ACCESS_KEY"],
+        stage="dev",
+    )
+
+    aws_credentials.get_aws_credentials()
+
     function_name = f"arn:aws:lambda:eu-west-2:{aws_account_id}:function:rtg-automotive-{stage}-generate-ebay-table"
     if trigger_lambda_function(function_name, aws_account_id):
         last_csv_key = get_last_csv_from_s3(
             project_bucket_name, "athena-results/", s3_client
         )
         if last_csv_key:
-            s3_client = s3.S3Client()
-            df = s3_client.load_csv_from_s3(
-                project_bucket_name, last_csv_key, s3_client
+            s3_handler = s3.S3Handler(
+                os.environ["AWS_ACCESS_KEY_ID"],
+                os.environ["AWS_SECRET_ACCESS_KEY"],
+                os.environ["AWS_SESSION_TOKEN"],
+                "eu-west-2",
             )
+
+            data = s3_handler.load_csv_from_s3(project_bucket_name, last_csv_key)
+            df = pd.DataFrame(data[1:], columns=data[0])
             ebay_df = create_ebay_dataframe(df)
             stores = list(ebay_df["Store"].unique())
             ebay_dfs = [
@@ -133,10 +146,10 @@ def app_stock_manager(stage, aws_account_id):
 
     s3_client = boto3.client(
         "s3",
-        region_name="eu-west-2",
         aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
         aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
         aws_session_token=os.environ["AWS_SESSION_TOKEN"],
+        region_name="eu-west-2",
     )
 
     sqs_queue_url = (
