@@ -7,7 +7,7 @@ TO DO:
 - Integrate mypy and pylint
 - Add more logs
 - Refactor the code
-
+- Build dead letter queue for lambda functions
 
 # Commands:
 
