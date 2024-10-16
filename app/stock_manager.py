@@ -6,11 +6,16 @@ import pandas as pd
 from typing import List, Tuple
 import io
 import zipfile
-from aws import (
-    get_last_csv_from_s3,
-    trigger_lambda_function,
-)
-from aws_utils import iam, sqs, s3
+from aws_utils import iam, sqs, s3, aws_lambda
+
+
+def get_last_csv_from_s3(bucket_name, prefix, s3_client):
+    response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
+    csv_files = [
+        obj for obj in response.get("Contents", []) if obj["Key"].endswith(".csv")
+    ]
+    csv_files.sort(key=lambda x: x["LastModified"], reverse=True)
+    return csv_files[0]["Key"] if csv_files else None
 
 
 def zip_dataframes(dataframes: List[Tuple[pd.DataFrame, str]]) -> io.BytesIO:
@@ -99,7 +104,8 @@ def generate_ebay_upload_files(stage, aws_account_id, project_bucket_name, s3_cl
     aws_credentials.get_aws_credentials()
 
     function_name = f"arn:aws:lambda:eu-west-2:{aws_account_id}:function:rtg-automotive-{stage}-generate-ebay-table"
-    if trigger_lambda_function(function_name, aws_account_id):
+    lambda_handler = aws_lambda.LambdaHandler()
+    if lambda_handler.trigger_lambda_function(function_name):
         last_csv_key = get_last_csv_from_s3(
             project_bucket_name, "athena-results/", s3_client
         )
@@ -133,7 +139,6 @@ def generate_ebay_upload_files(stage, aws_account_id, project_bucket_name, s3_cl
 
 
 def app_stock_manager(stage, aws_account_id):
-    role = "ProdAdminRole" if stage == "prod" else "DevAdminRole"
 
     st.title("Stock Manager")
     aws_credentials = iam.AWSCredentials(
