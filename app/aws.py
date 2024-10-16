@@ -25,33 +25,3 @@ def log_action(bucket_name, action, user):
         Body=json.dumps([log_entry]) + "\n",
         ContentType="application/json",
     )
-
-
-# def trigger_lambda_function(function_name: str, aws_account_id: str) -> bool:
-#     lambda_client = boto3.client(
-#         "lambda",
-#         region_name="eu-west-2",
-#         aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
-#         aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
-#         aws_session_token=os.environ["AWS_SESSION_TOKEN"],
-#     )
-#     try:
-#         response = lambda_client.invoke(
-#             FunctionName=function_name,
-#             InvocationType="RequestResponse",
-#         )
-#         time.sleep(2)
-#         return True
-#     except Exception as e:
-#         st.error(f"Error: {str(e)}")
-#         return False
-
-
-def get_s3_client():
-    return boto3.client(
-        "s3",
-        region_name="eu-west-2",
-        aws_access_key_id=st.secrets["aws_credentials"]["AWS_ACCESS_KEY_ID"],
-        aws_secret_access_key=st.secrets["aws_credentials"]["AWS_SECRET_ACCESS_KEY"],
-        aws_session_token=st.secrets["aws_credentials"].get("AWS_SESSION_TOKEN"),
-    )

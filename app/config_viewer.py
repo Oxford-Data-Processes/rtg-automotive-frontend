@@ -1,13 +1,7 @@
 import json
+import os
 import streamlit as st
-from aws import get_s3_client
-
-
-def load_json_from_s3(bucket_name, json_key):
-    s3_client = get_s3_client()
-    json_object = s3_client.get_object(Bucket=bucket_name, Key=json_key)
-    json_data = json_object["Body"].read()
-    return json.loads(json_data)
+from aws_utils import s3
 
 
 def app_config_viewer(aws_account_id):
@@ -16,7 +10,13 @@ def app_config_viewer(aws_account_id):
     json_key = "config/process_stock_feed_config.json"
 
     try:
-        config_data = load_json_from_s3(bucket_name, json_key)
+        s3_handler = s3.S3Handler(
+            os.environ["AWS_ACCESS_KEY_ID"],
+            os.environ["AWS_SECRET_ACCESS_KEY"],
+            os.environ["AWS_SESSION_TOKEN"],
+            "eu-west-2",
+        )
+        config_data = s3_handler.load_json_from_s3(bucket_name, json_key)
 
         for item in config_data.values():
             if item.get("process_func") == "process_numerical":

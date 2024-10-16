@@ -3,7 +3,7 @@ import pandas as pd
 from io import BytesIO
 import boto3
 import os
-from aws import log_action
+from aws_utils import logs
 
 
 def get_expected_schema():
@@ -68,7 +68,12 @@ def display_validation_results(errors, df):
 
 def update_database(df, aws_account_id):
     suppliers = df.groupby(["supplier", "ebay_store"])
-    s3_client = create_s3_client()
+    s3_client = boto3.client(
+        "s3",
+        aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
+        aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
+        aws_session_token=os.environ["AWS_SESSION_TOKEN"],
+    )
     bucket_name = f"rtg-automotive-bucket-{aws_account_id}"
 
     st.write(f"Uploading {len(df)} items to the database...")
@@ -87,15 +92,6 @@ def update_database(df, aws_account_id):
 
         except s3_client.exceptions.ClientError as e:
             handle_file_not_found(s3_client, e, bucket_name, file_path, group)
-
-
-def create_s3_client():
-    return boto3.client(
-        "s3",
-        aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
-        aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
-        aws_session_token=os.environ["AWS_SESSION_TOKEN"],
-    )
 
 
 def create_file_path(ebay_store, supplier):
@@ -125,7 +121,10 @@ def upload_data(s3_client, bucket_name, file_path, combined_data):
     s3_client.put_object(
         Bucket=bucket_name, Key=file_path, Body=parquet_buffer.getvalue()
     )
-    log_action(bucket_name, f"BULK_ITEM_UPLOADED | file_path={file_path}", "admin")
+    logs_handler = logs.LogsHandler()
+    logs_handler.log_action(
+        bucket_name, f"BULK_ITEM_UPLOADED | file_path={file_path}", "admin"
+    )
 
 
 def handle_file_not_found(s3_client, e, bucket_name, file_path, group):

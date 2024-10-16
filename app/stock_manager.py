@@ -98,7 +98,7 @@ def generate_ebay_upload_files(stage, aws_account_id, project_bucket_name, s3_cl
     aws_credentials = iam.AWSCredentials(
         aws_access_key_id=st.secrets["aws_credentials"]["AWS_ACCESS_KEY_ID"],
         aws_secret_access_key=st.secrets["aws_credentials"]["AWS_SECRET_ACCESS_KEY"],
-        stage="dev",
+        stage=st.secrets["aws_credentials"]["STAGE"],
     )
 
     aws_credentials.get_aws_credentials()
@@ -144,7 +144,7 @@ def app_stock_manager(stage, aws_account_id):
     aws_credentials = iam.AWSCredentials(
         aws_access_key_id=st.secrets["aws_credentials"]["AWS_ACCESS_KEY_ID"],
         aws_secret_access_key=st.secrets["aws_credentials"]["AWS_SECRET_ACCESS_KEY"],
-        stage="dev",
+        stage=st.secrets["aws_credentials"]["STAGE"],
     )
 
     aws_credentials.get_aws_credentials()
