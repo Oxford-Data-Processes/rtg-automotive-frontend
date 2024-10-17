@@ -92,13 +92,12 @@ def handle_file_uploads(
 
 
 def generate_ebay_upload_files(stage, aws_account_id, project_bucket_name, s3_handler):
-    aws_credentials = iam.AWSCredentials(
-        aws_access_key_id=st.secrets["aws_credentials"]["AWS_ACCESS_KEY_ID"],
-        aws_secret_access_key=st.secrets["aws_credentials"]["AWS_SECRET_ACCESS_KEY"],
-        stage=st.secrets["aws_credentials"]["STAGE"],
+    iam_instance = iam.IAM(stage=os.environ["STAGE"])
+    iam.AWSCredentials.get_aws_credentials(
+        aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID_ADMIN"],
+        aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY_ADMIN"],
+        iam_instance=iam_instance,
     )
-
-    aws_credentials.get_aws_credentials()
 
     function_name = f"arn:aws:lambda:eu-west-2:{aws_account_id}:function:rtg-automotive-{stage}-generate-ebay-table"
     lambda_handler = aws_lambda.LambdaHandler()
@@ -132,13 +131,12 @@ def generate_ebay_upload_files(stage, aws_account_id, project_bucket_name, s3_ha
 def app_stock_manager(stage, aws_account_id):
 
     st.title("Stock Manager")
-    aws_credentials = iam.AWSCredentials(
-        aws_access_key_id=st.secrets["aws_credentials"]["AWS_ACCESS_KEY_ID"],
-        aws_secret_access_key=st.secrets["aws_credentials"]["AWS_SECRET_ACCESS_KEY"],
-        stage=st.secrets["aws_credentials"]["STAGE"],
+    iam_instance = iam.IAM(stage=os.environ["STAGE"])
+    iam.AWSCredentials.get_aws_credentials(
+        aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID_ADMIN"],
+        aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY_ADMIN"],
+        iam_instance=iam_instance,
     )
-
-    aws_credentials.get_aws_credentials()
 
     s3_handler = s3.S3Handler(
         os.environ["AWS_ACCESS_KEY_ID"],

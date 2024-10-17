@@ -7,14 +7,12 @@ aws_access_key_id = st.secrets["aws_credentials"]["AWS_ACCESS_KEY_ID"]
 aws_secret_access_key = st.secrets["aws_credentials"]["AWS_SECRET_ACCESS_KEY"]
 aws_account_id = st.secrets["aws_credentials"]["AWS_ACCOUNT_ID"]
 
-aws_credentials = iam.AWSCredentials(
-    aws_access_key_id=aws_access_key_id,
-    aws_secret_access_key=aws_secret_access_key,
-    stage="dev",
+iam_instance = iam.IAM(stage=os.environ["STAGE"])
+iam.AWSCredentials.get_aws_credentials(
+    aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID_ADMIN"],
+    aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY_ADMIN"],
+    iam_instance=iam_instance,
 )
-
-aws_credentials.get_aws_credentials()
-
 
 last_csv_key = "athena-results/0b091758-c380-42f4-a0ba-a99b25652114.csv"
 project_bucket_name = "rtg-automotive-bucket-654654324108"

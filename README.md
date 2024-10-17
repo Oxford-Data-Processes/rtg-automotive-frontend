@@ -2,7 +2,6 @@
 
 TO DO:
 
-- Ensure that rtg automotive and rtg automotive frontend work with new changes made
 - Add a feature that lets you see whether there is data for each supplier and for each date, show some kind of dataframe that shows you all the data available
 - Add a feature that lets you delete items from the store database
 - Integrate mypy and pylint
