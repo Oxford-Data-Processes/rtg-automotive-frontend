@@ -71,12 +71,7 @@ def update_database(df, aws_account_id):
 
     st.write(f"Uploading {len(df)} items to the database...")
 
-    s3_handler = s3.S3Handler(
-        os.environ["AWS_ACCESS_KEY_ID"],
-        os.environ["AWS_SECRET_ACCESS_KEY"],
-        os.environ["AWS_SESSION_TOKEN"],
-        "eu-west-2",
-    )
+    s3_handler = s3.S3Handler()
 
     for (supplier, ebay_store), group in suppliers:
         file_path = create_file_path(ebay_store, supplier)

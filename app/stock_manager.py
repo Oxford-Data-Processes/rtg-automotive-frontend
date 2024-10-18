@@ -138,12 +138,7 @@ def app_stock_manager(stage, aws_account_id):
         iam_instance=iam_instance,
     )
 
-    s3_handler = s3.S3Handler(
-        os.environ["AWS_ACCESS_KEY_ID"],
-        os.environ["AWS_SECRET_ACCESS_KEY"],
-        os.environ["AWS_SESSION_TOKEN"],
-        "eu-west-2",
-    )
+    s3_handler = s3.S3Handler()
 
     sqs_queue_url = (
         f"https://sqs.eu-west-2.amazonaws.com/{aws_account_id}/rtg-automotive-sqs-queue"
