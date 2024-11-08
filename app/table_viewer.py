@@ -1,27 +1,7 @@
 import streamlit as st
 import pandas as pd
-from aws import run_athena_query
-
-
-def format_query_results(results):
-    if "ResultSet" in results and "Rows" in results["ResultSet"]:
-        return extract_rows(results["ResultSet"]["Rows"])
-    else:
-        st.error("No results returned from the query.")
-        return []
-
-
-def extract_rows(rows):
-    formatted_results = []
-    if len(rows) > 1:  # Ensure there are rows to process
-        headers = [col["VarCharValue"] for col in rows[0]["Data"]]
-        for row in rows[1:]:
-            formatted_row = {
-                headers[i]: cell.get("VarCharValue", None)
-                for i, cell in enumerate(row["Data"])
-            }
-            formatted_results.append(formatted_row)
-    return formatted_results
+from aws_utils import athena
+from utils import PROJECT_BUCKET_NAME
 
 
 def get_table_config():
@@ -151,10 +131,13 @@ def app_table_viewer():
     st.code(query)
 
     if st.button("Run Query"):
-        results = run_athena_query(query)
-        formatted_results = format_query_results(results)
-
-        df_results = pd.DataFrame(formatted_results)
+        athena_handler = athena.AthenaHandler(
+            database="rtg_automotive",
+            workgroup="rtg-automotive-workgroup",
+            output_bucket=PROJECT_BUCKET_NAME,
+        )
+        results = athena_handler.run_query(query)
+        df_results = pd.DataFrame(results[1:], columns=results[0])
         st.dataframe(df_results)
 
 
