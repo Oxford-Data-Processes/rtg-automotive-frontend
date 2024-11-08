@@ -81,11 +81,7 @@ def handle_file_uploads(uploaded_files, bucket_name, date, s3_handler, sqs_queue
             -len(uploaded_files) :
         ]
         st.write("--------------------------------------------------")
-        for message in messages:
-            if "success" in message["message"].lower():
-                st.success(message["message"])
-            else:
-                st.error(message["message"])
+        st.write(messages)
     else:
         st.warning("Please upload at least one file first.")
 
