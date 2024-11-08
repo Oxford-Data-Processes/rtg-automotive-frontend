@@ -5,7 +5,8 @@ import pandas as pd
 from typing import List, Tuple
 import io
 import zipfile
-from aws_utils import iam, sqs, s3, aws_lambda
+from aws_utils import sqs, s3, events, iam
+from utils import PROJECT_BUCKET_NAME
 
 
 def get_last_csv_from_s3(bucket_name, prefix, s3_handler):
@@ -69,12 +70,10 @@ def upload_file_to_s3(file, bucket_name, date, s3_handler):
         st.error(f"Error uploading file: {str(e)}")
 
 
-def handle_file_uploads(
-    uploaded_files, stock_feed_bucket_name, date, s3_handler, sqs_queue_url
-):
+def handle_file_uploads(uploaded_files, bucket_name, date, s3_handler, sqs_queue_url):
     if uploaded_files:
         for uploaded_file in uploaded_files:
-            upload_file_to_s3(uploaded_file, stock_feed_bucket_name, date, s3_handler)
+            upload_file_to_s3(uploaded_file, bucket_name, date, s3_handler)
         st.success("Files uploaded successfully")
         time.sleep(len(uploaded_files) * 4)
         sqs_handler = sqs.SQSHandler()
@@ -91,60 +90,54 @@ def handle_file_uploads(
         st.warning("Please upload at least one file first.")
 
 
-def generate_ebay_upload_files(stage, aws_account_id, project_bucket_name, s3_handler):
-    iam_instance = iam.IAM(stage=os.environ["STAGE"])
-    iam.AWSCredentials.get_aws_credentials(
-        aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID_ADMIN"],
-        aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY_ADMIN"],
-        iam_instance=iam_instance,
+def generate_ebay_upload_files(stage, project_bucket_name, s3_handler):
+    iam.get_aws_credentials(st.secrets["aws_credentials"])
+
+    events_handler = events.EventsHandler()
+    event_detail = {
+        "bucket_name": project_bucket_name,
+    }
+    events_handler.publish_event(
+        "rtg-automotive-process-stock-feed-lambda-event-bus",
+        "com.oxforddataprocesses",
+        "StockFeedProcessed",
+        event_detail,
     )
 
-    function_name = f"arn:aws:lambda:eu-west-2:{aws_account_id}:function:rtg-automotive-{stage}-generate-ebay-table"
-    lambda_handler = aws_lambda.LambdaHandler()
-    if lambda_handler.trigger_lambda_function(function_name):
-        last_csv_key = get_last_csv_from_s3(
-            project_bucket_name, "athena-results/", s3_handler
+    time.sleep(5)
+
+    last_csv_key = get_last_csv_from_s3(
+        project_bucket_name, "athena-results/", s3_handler
+    )
+    if last_csv_key:
+
+        data = s3_handler.load_csv_from_s3(project_bucket_name, last_csv_key)
+        df = pd.DataFrame(data[1:], columns=data[0])
+        ebay_df = create_ebay_dataframe(df)
+        stores = list(ebay_df["Store"].unique())
+        ebay_dfs = [
+            (ebay_df[ebay_df["Store"] == store].drop(columns=["Store"]), store)
+            for store in stores
+        ]
+
+        zip_buffer = zip_dataframes(ebay_dfs)
+
+        st.download_button(
+            label="Download eBay Upload Files",
+            data=zip_buffer.getvalue(),
+            file_name="ebay_upload_files.zip",
+            mime="application/zip",
         )
-        if last_csv_key:
-
-            data = s3_handler.load_csv_from_s3(project_bucket_name, last_csv_key)
-            df = pd.DataFrame(data[1:], columns=data[0])
-            ebay_df = create_ebay_dataframe(df)
-            stores = list(ebay_df["Store"].unique())
-            ebay_dfs = [
-                (ebay_df[ebay_df["Store"] == store].drop(columns=["Store"]), store)
-                for store in stores
-            ]
-
-            zip_buffer = zip_dataframes(ebay_dfs)
-
-            st.download_button(
-                label="Download eBay Upload Files",
-                data=zip_buffer.getvalue(),
-                file_name="ebay_upload_files.zip",
-                mime="application/zip",
-            )
-        else:
-            st.warning("No CSV file found in the specified S3 path.")
 
 
-def app_stock_manager(stage, aws_account_id):
+def app_stock_manager(stage):
 
     st.title("Stock Manager")
-    iam_instance = iam.IAM(stage=os.environ["STAGE"])
-    iam.AWSCredentials.get_aws_credentials(
-        aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID_ADMIN"],
-        aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY_ADMIN"],
-        iam_instance=iam_instance,
-    )
+    iam.get_aws_credentials(st.secrets["aws_credentials"])
 
     s3_handler = s3.S3Handler()
 
-    sqs_queue_url = (
-        f"https://sqs.eu-west-2.amazonaws.com/{aws_account_id}/rtg-automotive-sqs-queue"
-    )
-    stock_feed_bucket_name = f"rtg-automotive-stock-feed-bucket-{aws_account_id}"
-    project_bucket_name = f"rtg-automotive-bucket-{aws_account_id}"
+    sqs_queue_url = "rtg-automotive-lambda-queue"
 
     uploaded_files = st.file_uploader(
         "Upload Excel files", type=["xlsx"], accept_multiple_files=True
@@ -155,10 +148,8 @@ def app_stock_manager(stage, aws_account_id):
 
     if st.button("Upload Files") and date:
         handle_file_uploads(
-            uploaded_files, stock_feed_bucket_name, date, s3_handler, sqs_queue_url
+            uploaded_files, PROJECT_BUCKET_NAME, date, s3_handler, sqs_queue_url
         )
 
-    if st.button("Generate eBay Store Upload Files"):
-        generate_ebay_upload_files(
-            stage, aws_account_id, project_bucket_name, s3_handler
-        )
+    # if st.button("Generate eBay Store Upload Files"):
+    #     generate_ebay_upload_files(stage, PROJECT_BUCKET_NAME, s3_handler)

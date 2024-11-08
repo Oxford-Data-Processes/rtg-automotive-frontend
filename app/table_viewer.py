@@ -1,28 +1,7 @@
 import streamlit as st
 import pandas as pd
-import os
 from aws_utils import athena
-
-
-# def format_query_results(results):
-#     if "ResultSet" in results and "Rows" in results["ResultSet"]:
-#         return extract_rows(results["ResultSet"]["Rows"])
-#     else:
-#         st.error("No results returned from the query.")
-#         return []
-
-
-# def extract_rows(rows):
-#     formatted_results = []
-#     if len(rows) > 1:  # Ensure there are rows to process
-#         headers = [col["VarCharValue"] for col in rows[0]["Data"]]
-#         for row in rows[1:]:
-#             formatted_row = {
-#                 headers[i]: cell.get("VarCharValue", None)
-#                 for i, cell in enumerate(row["Data"])
-#             }
-#             formatted_results.append(formatted_row)
-#     return formatted_results
+from utils import PROJECT_BUCKET_NAME
 
 
 def get_table_config():
@@ -155,7 +134,7 @@ def app_table_viewer():
         athena_handler = athena.AthenaHandler(
             database="rtg_automotive",
             workgroup="rtg-automotive-workgroup",
-            output_bucket=f"rtg-automotive-bucket-{os.environ['AWS_ACCOUNT_ID']}",
+            output_bucket=PROJECT_BUCKET_NAME,
         )
         results = athena_handler.run_query(query)
         df_results = pd.DataFrame(results[1:], columns=results[0])

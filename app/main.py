@@ -5,7 +5,6 @@ from config_viewer import app_config_viewer
 from bulk_item_uploader import app_bulk_item_uploader
 from log_viewer import app_log_viewer
 
-AWS_ACCOUNT_ID = st.secrets["aws_credentials"]["AWS_ACCOUNT_ID"]
 STAGE = st.secrets["aws_credentials"]["STAGE"]
 
 USERNAME = st.secrets["login_credentials"]["username"]
@@ -46,12 +45,12 @@ if __name__ == "__main__":
         )
 
         if app_mode == "Stock Manager":
-            app_stock_manager(STAGE, AWS_ACCOUNT_ID)
+            app_stock_manager(STAGE)
         elif app_mode == "Table Viewer":
             app_table_viewer()
         elif app_mode == "Config Viewer":
-            app_config_viewer(AWS_ACCOUNT_ID)
+            app_config_viewer()
         elif app_mode == "Bulk Item Uploader":
-            app_bulk_item_uploader(AWS_ACCOUNT_ID)
+            app_bulk_item_uploader()
         elif app_mode == "Log Viewer":
-            app_log_viewer(AWS_ACCOUNT_ID)
+            app_log_viewer()

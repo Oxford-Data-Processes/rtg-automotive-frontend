@@ -65,9 +65,9 @@ def display_validation_results(errors, df):
         st.dataframe(df)
 
 
-def update_database(df, aws_account_id):
+def update_database(df):
     suppliers = df.groupby(["supplier", "ebay_store"])
-    bucket_name = f"rtg-automotive-bucket-{aws_account_id}"
+    bucket_name = f"rtg-automotive-bucket-{os.environ['AWS_ACCOUNT_ID']}"
 
     st.write(f"Uploading {len(df)} items to the database...")
 
@@ -131,7 +131,7 @@ def handle_file_not_found(s3_handler, e, bucket_name, file_path, group):
         st.error(f"An error occurred while accessing S3: {e}")
 
 
-def app_bulk_item_uploader(aws_account_id):
+def app_bulk_item_uploader():
     st.title("Bulk Item Uploader")
     expected_schema = get_expected_schema()
     display_expected_schema(expected_schema)
@@ -143,4 +143,4 @@ def app_bulk_item_uploader(aws_account_id):
         display_validation_results(errors, df)
 
         if not errors and st.button("Upload to Database"):
-            update_database(df, aws_account_id)
+            update_database(df)
