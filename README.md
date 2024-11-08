@@ -3,6 +3,7 @@
 
 TO DO:
 
+
 - Add a feature that lets you see whether there is data for each supplier and for each date, show some kind of dataframe that shows you all the data available
 - Log more events
 - Build dead letter queue for lambda functions
