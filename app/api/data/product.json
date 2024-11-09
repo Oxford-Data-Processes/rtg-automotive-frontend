@@ -1,0 +1,22 @@
+[
+    {
+        "custom_label": "Label A",
+        "part_number": "PN12345",
+        "supplier": "Supplier X"
+    },
+    {
+        "custom_label": "Label B",
+        "part_number": "PN67890",
+        "supplier": "Supplier Y"
+    },
+    {
+        "custom_label": "Label C",
+        "part_number": "PN54321",
+        "supplier": "Supplier Z"
+    },
+    {
+        "custom_label": "Label D",
+        "part_number": "PN09876",
+        "supplier": "Supplier W"
+    }
+]

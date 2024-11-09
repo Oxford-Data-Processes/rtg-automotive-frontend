@@ -1,0 +1,59 @@
+[
+    {
+        "item_id": 1001,
+        "custom_label": "Label 1",
+        "title": "Item Title 1",
+        "current_price": 19.99,
+        "prefix": "PRE1",
+        "uk_rtg": "UK123",
+        "fps_wds_dir": "dir1",
+        "payment_profile_name": "Profile A",
+        "shipping_profile_name": "Shipping A",
+        "return_profile_name": "Return A",
+        "supplier": "Supplier A",
+        "ebay_store": "Store A"
+    },
+    {
+        "item_id": 1002,
+        "custom_label": "Label 2",
+        "title": "Item Title 2",
+        "current_price": 29.99,
+        "prefix": "PRE2",
+        "uk_rtg": "UK124",
+        "fps_wds_dir": "dir2",
+        "payment_profile_name": "Profile B",
+        "shipping_profile_name": "Shipping B",
+        "return_profile_name": "Return B",
+        "supplier": "Supplier B",
+        "ebay_store": "Store B"
+    },
+    {
+        "item_id": 1003,
+        "custom_label": "Label 3",
+        "title": "Item Title 3",
+        "current_price": 39.99,
+        "prefix": "PRE3",
+        "uk_rtg": "UK125",
+        "fps_wds_dir": "dir3",
+        "payment_profile_name": "Profile C",
+        "shipping_profile_name": "Shipping C",
+        "return_profile_name": "Return C",
+        "supplier": "Supplier C",
+        "ebay_store": "Store C"
+    },
+    {
+        "item_id": 1004,
+        "custom_label": "Label 4",
+        "title": "Item Title 4",
+        "current_price": 49.99,
+        "prefix": "PRE4",
+        "uk_rtg": "UK126",
+        "fps_wds_dir": "dir4",
+        "payment_profile_name": "Profile D",
+        "shipping_profile_name": "Shipping D",
+        "return_profile_name": "Return D",
+        "supplier": "Supplier D",
+        "ebay_store": "Store D"
+    }
+]
+

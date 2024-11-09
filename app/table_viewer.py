@@ -1,7 +1,8 @@
 import streamlit as st
 import pandas as pd
-from aws_utils import athena
+from aws_utils import iam
 from utils import PROJECT_BUCKET_NAME
+import api.utils as api_utils
 
 
 def get_table_config():
@@ -92,8 +93,15 @@ def format_filter(selected_filter_column, filter_value, filter_column_type):
     )
 
 
+def build_query(base_query, filters, result_limit):
+    filters_clause = " AND ".join(filters) if filters else "1=1"
+    limit_clause = f"LIMIT {result_limit}" if result_limit > 0 else ""
+    return base_query.format(filters=filters_clause) + " " + limit_clause
+
+
 def app_table_viewer():
     st.title("Table Viewer")
+    iam.get_aws_credentials(st.secrets["aws_credentials"])
     config = get_table_config()
 
     table_selection = st.selectbox(
@@ -131,17 +139,12 @@ def app_table_viewer():
     st.code(query)
 
     if st.button("Run Query"):
-        athena_handler = athena.AthenaHandler(
-            database="rtg_automotive",
-            workgroup="rtg-automotive-workgroup",
-            output_bucket=PROJECT_BUCKET_NAME,
-        )
-        results = athena_handler.run_query(query)
-        df_results = pd.DataFrame(results[1:], columns=results[0])
-        st.dataframe(df_results)
+        params = {
+            "table_name": table_selection,
+            "filters": st.session_state.filters,
+            "limit": 5,
+        }
 
+        df_results = api_utils.get_request("items", params)
 
-def build_query(base_query, filters, result_limit):
-    filters_clause = " AND ".join(filters) if filters else "1=1"
-    limit_clause = f"LIMIT {result_limit}" if result_limit > 0 else ""
-    return base_query.format(filters=filters_clause) + " " + limit_clause
+        st.dataframe(pd.DataFrame(df_results))

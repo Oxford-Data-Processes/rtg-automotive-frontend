@@ -1,0 +1,47 @@
+[
+    {
+        "ebay_store": "Store A",
+        "supplier": "Supplier 1",
+        "custom_label": "Label 1",
+        "quantity": 10,
+        "quantity_delta": 2,
+        "updated_date": "2023-10-01",
+        "item_id": 1234567890123
+    },
+    {
+        "ebay_store": "Store B",
+        "supplier": "Supplier 2",
+        "custom_label": "Label 2",
+        "quantity": 5,
+        "quantity_delta": -1,
+        "updated_date": "2023-10-02",
+        "item_id": 1234567890124
+    },
+    {
+        "ebay_store": "Store C",
+        "supplier": "Supplier 3",
+        "custom_label": "Label 3",
+        "quantity": 20,
+        "quantity_delta": 5,
+        "updated_date": "2023-10-03",
+        "item_id": 1234567890125
+    },
+    {
+        "ebay_store": "Store D",
+        "supplier": "Supplier 4",
+        "custom_label": "Label 4",
+        "quantity": 15,
+        "quantity_delta": 3,
+        "updated_date": "2023-10-04",
+        "item_id": 1234567890126
+    },
+    {
+        "ebay_store": "Store E",
+        "supplier": "Supplier 5",
+        "custom_label": "Label 5",
+        "quantity": 8,
+        "quantity_delta": -2,
+        "updated_date": "2023-10-05",
+        "item_id": 1234567890127
+    }
+]

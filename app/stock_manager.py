@@ -5,7 +5,8 @@ import pandas as pd
 from typing import List, Tuple
 import io
 import zipfile
-from aws_utils import sqs, s3, events, iam
+from aws_utils import sqs, s3, iam
+import api.utils as api_utils
 from utils import PROJECT_BUCKET_NAME
 
 
@@ -87,43 +88,26 @@ def handle_file_uploads(uploaded_files, bucket_name, date, s3_handler, sqs_queue
 
 
 def generate_ebay_upload_files(stage, project_bucket_name, s3_handler):
-    iam.get_aws_credentials(st.secrets["aws_credentials"])
 
-    events_handler = events.EventsHandler()
-    event_detail = {
-        "bucket_name": project_bucket_name,
-    }
-    events_handler.publish_event(
-        "rtg-automotive-process-stock-feed-lambda-event-bus",
-        "com.oxforddataprocesses",
-        "StockFeedProcessed",
-        event_detail,
+    params = {"table_name": "ebay", "filters": [], "limit": 5}
+
+    data = api_utils.get_request("items", params)
+    df = pd.DataFrame(data)
+    ebay_df = create_ebay_dataframe(df)
+    stores = list(ebay_df["Store"].unique())
+    ebay_dfs = [
+        (ebay_df[ebay_df["Store"] == store].drop(columns=["Store"]), store)
+        for store in stores
+    ]
+
+    zip_buffer = zip_dataframes(ebay_dfs)
+
+    st.download_button(
+        label="Download eBay Upload Files",
+        data=zip_buffer.getvalue(),
+        file_name="ebay_upload_files.zip",
+        mime="application/zip",
     )
-
-    time.sleep(5)
-
-    last_csv_key = get_last_csv_from_s3(
-        project_bucket_name, "athena-results/", s3_handler
-    )
-    if last_csv_key:
-
-        data = s3_handler.load_csv_from_s3(project_bucket_name, last_csv_key)
-        df = pd.DataFrame(data[1:], columns=data[0])
-        ebay_df = create_ebay_dataframe(df)
-        stores = list(ebay_df["Store"].unique())
-        ebay_dfs = [
-            (ebay_df[ebay_df["Store"] == store].drop(columns=["Store"]), store)
-            for store in stores
-        ]
-
-        zip_buffer = zip_dataframes(ebay_dfs)
-
-        st.download_button(
-            label="Download eBay Upload Files",
-            data=zip_buffer.getvalue(),
-            file_name="ebay_upload_files.zip",
-            mime="application/zip",
-        )
 
 
 def app_stock_manager(stage):
@@ -147,5 +131,5 @@ def app_stock_manager(stage):
             uploaded_files, PROJECT_BUCKET_NAME, date, s3_handler, sqs_queue_url
         )
 
-    # if st.button("Generate eBay Store Upload Files"):
-    #     generate_ebay_upload_files(stage, PROJECT_BUCKET_NAME, s3_handler)
+    if st.button("Generate eBay Store Upload Files"):
+        generate_ebay_upload_files(stage, PROJECT_BUCKET_NAME, s3_handler)

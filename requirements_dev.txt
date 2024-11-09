@@ -1,3 +1,6 @@
 boto3
 streamlit
+uvicorn
+fastapi
+requests
 git+https://github.com/Oxford-Data-Processes/aws-utils.git

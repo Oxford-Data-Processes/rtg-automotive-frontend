@@ -1,0 +1,47 @@
+[
+    {
+        "part_number": "PN12345",
+        "quantity": 100,
+        "updated_date": "2023-10-01",
+        "supplier": "Supplier A",
+        "year": "2023",
+        "month": "10",
+        "day": "01"
+    },
+    {
+        "part_number": "PN67890",
+        "quantity": 200,
+        "updated_date": "2023-10-02",
+        "supplier": "Supplier B",
+        "year": "2023",
+        "month": "10",
+        "day": "02"
+    },
+    {
+        "part_number": "PN54321",
+        "quantity": 150,
+        "updated_date": "2023-10-03",
+        "supplier": "Supplier C",
+        "year": "2023",
+        "month": 10,
+        "day": "03"
+    },
+    {
+        "part_number": "PN09876",
+        "quantity": 250,
+        "updated_date": "2023-10-04",
+        "supplier": "Supplier D",
+        "year": "2023",
+        "month": "10",
+        "day": "04"
+    },
+    {
+        "part_number": "PN11223",
+        "quantity": 300,
+        "updated_date": "2023-10-05",
+        "supplier": "Supplier E",
+        "year": "2023",
+        "month": "10",
+        "day": "05"
+    }
+]
