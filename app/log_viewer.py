@@ -2,17 +2,27 @@ import streamlit as st
 import pandas as pd
 from aws_utils import logs, iam
 import os
-from utils import PROJECT_BUCKET_NAME
 
 
-def app_log_viewer():
+def load_logs(logs_handler, bucket_name):
+    log_messages = logs_handler.get_logs(bucket_name, "frontend")
+    log_df = pd.DataFrame(log_messages).sort_values(by="timestamp", ascending=False)
+    st.dataframe(log_df, use_container_width=True)
+
+
+def main():
     iam.get_aws_credentials(st.secrets["aws_credentials"])
-    st.title("Log Viewer")
-    project_name = "frontend"
-
+    project = "rtg-automotive"
+    bucket_name = f"{project}-bucket-{os.environ['AWS_ACCOUNT_ID']}"
+    st.title("Logs")
     logs_handler = logs.LogsHandler()
-    log_data = logs_handler.get_logs(PROJECT_BUCKET_NAME, project_name)
 
-    log_df = pd.DataFrame(log_data)
-    log_df = log_df.sort_values(by="timestamp", ascending=False)
-    st.dataframe(log_df)
+    load_logs(logs_handler, bucket_name)
+
+    refresh_button = st.button("Refresh Logs")
+    if refresh_button:
+        load_logs(logs_handler, bucket_name)
+
+
+if __name__ == "__main__":
+    main()

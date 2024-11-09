@@ -87,11 +87,13 @@ def handle_file_uploads(uploaded_files, bucket_name, date, s3_handler, sqs_queue
         st.warning("Please upload at least one file first.")
 
 
-def generate_ebay_upload_files(stage, project_bucket_name, s3_handler):
+def generate_ebay_upload_files():
 
-    params = {"table_name": "ebay", "filters": [], "limit": 5}
+    api_utils.post_request("items", params={"table_name": "ebay", "type": "update"})
 
-    data = api_utils.get_request("items", params)
+    data = api_utils.get_request(
+        "items", params={"table_name": "ebay", "filters": [], "limit": 5}
+    )
     df = pd.DataFrame(data)
     ebay_df = create_ebay_dataframe(df)
     stores = list(ebay_df["Store"].unique())
@@ -110,7 +112,7 @@ def generate_ebay_upload_files(stage, project_bucket_name, s3_handler):
     )
 
 
-def app_stock_manager(stage):
+def main():
 
     st.title("Stock Manager")
     iam.get_aws_credentials(st.secrets["aws_credentials"])
@@ -132,4 +134,4 @@ def app_stock_manager(stage):
         )
 
     if st.button("Generate eBay Store Upload Files"):
-        generate_ebay_upload_files(stage, PROJECT_BUCKET_NAME, s3_handler)
+        generate_ebay_upload_files()

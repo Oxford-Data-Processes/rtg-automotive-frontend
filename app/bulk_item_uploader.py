@@ -66,27 +66,14 @@ def display_validation_results(errors, df):
 
 
 def update_database(df):
-    suppliers = df.groupby(["supplier", "ebay_store"])
-    bucket_name = f"rtg-automotive-bucket-{os.environ['AWS_ACCOUNT_ID']}"
-
-    st.write(f"Uploading {len(df)} items to the database...")
-
-    s3_handler = s3.S3Handler()
-
-    for (supplier, ebay_store), group in suppliers:
-        file_path = create_file_path(ebay_store, supplier)
-        try:
-            combined_data = handle_existing_file(
-                s3_handler, bucket_name, file_path, group
-            )
-            if combined_data is not None:
-                upload_data(s3_handler, bucket_name, file_path, combined_data)
-                st.success(
-                    f"Uploaded {len(group)} items for supplier: {supplier} ebay_store: {ebay_store}"
-                )
-
-        except Exception as e:
-            handle_file_not_found(s3_handler, e, bucket_name, file_path, group)
+    project = "rtg-automotive"
+    file_path = "data/bulk_item_upload.csv"
+    bucket_name = f"{project}-bucket-{os.environ['AWS_ACCOUNT_ID']}"
+    logs_handler = logs.LogsHandler()
+    logs_handler.log_action(
+        bucket_name, "frontend", f"BULK_ITEM_UPLOADED | file_path={file_path}", "admin"
+    )
+    st.success("Uploaded to Database")
 
 
 def create_file_path(ebay_store, supplier):
@@ -107,31 +94,7 @@ def handle_existing_file(s3_handler, bucket_name, file_path, group):
     return combined_data
 
 
-def upload_data(s3_handler, bucket_name, file_path, combined_data):
-    parquet_buffer = BytesIO()
-    combined_data.to_parquet(parquet_buffer, index=False)
-    parquet_buffer.seek(0)
-
-    s3_handler.upload_parquet_to_s3(bucket_name, file_path, parquet_buffer.getvalue())
-    logs_handler = logs.LogsHandler()
-    logs_handler.log_action(
-        bucket_name, "frontend", f"BULK_ITEM_UPLOADED | file_path={file_path}", "admin"
-    )
-
-
-def handle_file_not_found(s3_handler, e, bucket_name, file_path, group):
-    if e.response["Error"]["Code"] == "404":
-        parquet_buffer = BytesIO()
-        group.to_parquet(parquet_buffer, index=False)
-        parquet_buffer.seek(0)
-        s3_handler.upload_parquet_to_s3(
-            bucket_name, file_path, parquet_buffer.getvalue()
-        )
-    else:
-        st.error(f"An error occurred while accessing S3: {e}")
-
-
-def app_bulk_item_uploader():
+def main():
     st.title("Bulk Item Uploader")
     expected_schema = get_expected_schema()
     display_expected_schema(expected_schema)

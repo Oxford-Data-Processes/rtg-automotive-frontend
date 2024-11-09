@@ -1,0 +1,6 @@
+item_id,custom_label,title,current_price,prefix,uk_rtg,fps_wds_dir,payment_profile_name,shipping_profile_name,return_profile_name,supplier,ebay_store
+1,Label A,Title A,19.99,Prefix A,UK RTG A,FPS WDS Dir A,Payment Profile A,Shipping Profile A,Return Profile A,Supplier A,Store A
+2,Label B,Title B,29.99,Prefix B,UK RTG B,FPS WDS Dir B,Payment Profile B,Shipping Profile B,Return Profile B,Supplier B,Store B
+3,Label C,Title C,39.99,Prefix C,UK RTG C,FPS WDS Dir C,Payment Profile C,Shipping Profile C,Return Profile C,Supplier C,Store C
+4,Label D,Title D,49.99,Prefix D,UK RTG D,FPS WDS Dir D,Payment Profile D,Shipping Profile D,Return Profile D,Supplier D,Store D
+5,Label E,Title E,59.99,Prefix E,UK RTG E,FPS WDS Dir E,Payment Profile E,Shipping Profile E,Return Profile E,Supplier E,Store E

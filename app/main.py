@@ -1,9 +1,9 @@
 import streamlit as st
-from stock_manager import app_stock_manager
-from table_viewer import app_table_viewer
-from config_viewer import app_config_viewer
-from bulk_item_uploader import app_bulk_item_uploader
-from log_viewer import app_log_viewer
+import stock_manager
+import table_viewer
+import config
+import bulk_item_uploader
+import log_viewer
 
 STAGE = st.secrets["aws_credentials"]["STAGE"]
 
@@ -38,19 +38,19 @@ if __name__ == "__main__":
             (
                 "Stock Manager",
                 "Table Viewer",
-                "Config Viewer",
+                "Config",
                 "Bulk Item Uploader",
                 "Log Viewer",
             ),
         )
 
         if app_mode == "Stock Manager":
-            app_stock_manager(STAGE)
+            stock_manager.main()
         elif app_mode == "Table Viewer":
-            app_table_viewer()
-        elif app_mode == "Config Viewer":
-            app_config_viewer()
+            table_viewer.main()
+        elif app_mode == "Config":
+            config.main()
         elif app_mode == "Bulk Item Uploader":
-            app_bulk_item_uploader()
+            bulk_item_uploader.main()
         elif app_mode == "Log Viewer":
-            app_log_viewer()
+            log_viewer.main()
