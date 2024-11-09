@@ -38,11 +38,12 @@ def main():
             st.subheader("Functions")
             functions_list = [
                 "set_value_to_10_if_labelled_yes",
-                "set_value_to_0_if_labelled_no",
-                "set_value_to_10_if_labelled_yes_and_value_less_than_10",
-                "set_value_to_0_if_labelled_no_and_value_greater_than_0",
+                "get_value_if_less_than_10_else_0",
+                "set_value_to_10_if_labelled_in_stock",
+                "set_value_to_10_if_product_in_list",
             ]
-            st.write("\n".join(functions_list))
+            for function in functions_list:
+                st.write(f"{function}")
 
     except Exception as e:
         st.error(f"Error loading config: {str(e)}")

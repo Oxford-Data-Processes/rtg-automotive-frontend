@@ -1,18 +1,12 @@
 import streamlit as st
 import pandas as pd
 from aws_utils import iam
-from utils import PROJECT_BUCKET_NAME
 import api.utils as api_utils
 
 
 def get_table_config():
     return {
         "product": {
-            "query": """
-            SELECT *
-            FROM "rtg_automotive"."product"
-            WHERE {filters}
-            """,
             "filter_columns": [
                 {"name": "custom_label", "type": "text"},
                 {"name": "part_number", "type": "text"},
@@ -20,11 +14,6 @@ def get_table_config():
             ],
         },
         "store": {
-            "query": """
-            SELECT *
-            FROM "rtg_automotive"."store"
-            WHERE {filters}
-            """,
             "filter_columns": [
                 {"name": "item_id", "type": "integer"},
                 {"name": "custom_label", "type": "text"},
@@ -33,11 +22,6 @@ def get_table_config():
             ],
         },
         "supplier_stock": {
-            "query": """
-            SELECT *
-            FROM "rtg_automotive"."supplier_stock"
-            WHERE {filters}
-            """,
             "filter_columns": [
                 {"name": "part_number", "type": "text"},
                 {"name": "supplier", "type": "text"},
@@ -62,44 +46,45 @@ def handle_filter_selection(filter_columns):
             for col in filter_columns
             if col["name"] == selected_filter_column
         )
-        filter_value = get_filter_value(selected_filter_column, filter_column_type)
 
-        if filter_value:
-            st.session_state.filters.append(
-                format_filter(selected_filter_column, filter_value, filter_column_type)
+        # Option to provide a single value
+        single_value = st.text_input(
+            f"Enter a single value for {selected_filter_column}"
+        )
+
+        # Get filter values from CSV upload
+        filter_values = get_filter_values(selected_filter_column, filter_column_type)
+
+        # Combine single value and filter values from CSV
+        if single_value:
+            filter_values.append(single_value)
+
+        if filter_values:
+            formatted_filters = format_filters(
+                selected_filter_column, filter_values, filter_column_type
             )
+            st.session_state.filters.extend(formatted_filters)
 
 
-def get_filter_value(selected_filter_column, filter_column_type):
-    if filter_column_type == "text":
-        return st.text_input(
-            f"Enter value for {selected_filter_column}",
-            key=f"filter_value_{len(st.session_state.filters)}",
-        )
-    elif filter_column_type == "integer":
-        return st.number_input(
-            f"Enter value for {selected_filter_column}",
-            format="%d",
-            key=f"filter_value_{len(st.session_state.filters)}",
-            value=0.0,
-        )
-
-
-def format_filter(selected_filter_column, filter_value, filter_column_type):
-    return (
-        f"{selected_filter_column} = '{filter_value}'"
-        if filter_column_type == "text"
-        else f"{selected_filter_column} = {int(filter_value)}"
+def get_filter_values(selected_filter_column, filter_column_type):
+    uploaded_file = st.file_uploader(
+        f"Upload CSV for {selected_filter_column}", type=["csv"]
     )
+    if uploaded_file is not None:
+        df = pd.read_csv(uploaded_file)
+        if selected_filter_column in df.columns:
+            return df[selected_filter_column].dropna().unique().tolist()
+    return []
 
 
-def build_query(base_query, filters, result_limit):
-    filters_clause = " AND ".join(filters) if filters else "1=1"
-    limit_clause = f"LIMIT {result_limit}" if result_limit > 0 else ""
-    return base_query.format(filters=filters_clause) + " " + limit_clause
+def format_filters(selected_filter_column, filter_values, filter_column_type):
+    if filter_column_type == "text":
+        return [f"{selected_filter_column} = '{value}'" for value in filter_values]
+    else:
+        return [f"{selected_filter_column} = {int(value)}" for value in filter_values]
 
 
-def app_table_viewer():
+def main():
     st.title("Table Viewer")
     iam.get_aws_credentials(st.secrets["aws_credentials"])
     config = get_table_config()
@@ -131,18 +116,11 @@ def app_table_viewer():
         min_value=0,
     )
 
-    query = build_query(
-        config[table_selection]["query"], st.session_state.filters, result_limit
-    )
-
-    st.write("SQL Query to be executed:")
-    st.code(query)
-
     if st.button("Run Query"):
         params = {
             "table_name": table_selection,
             "filters": st.session_state.filters,
-            "limit": 5,
+            "limit": result_limit,
         }
 
         df_results = api_utils.get_request("items", params)
