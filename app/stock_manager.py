@@ -73,12 +73,12 @@ def upload_file_to_s3(file, bucket_name, date, s3_handler):
 
 def handle_file_uploads(uploaded_files, bucket_name, date, s3_handler, sqs_queue_url):
     if uploaded_files:
+        sqs_handler = sqs.SQSHandler()
         sqs_handler.delete_all_sqs_messages(sqs_queue_url)
         for uploaded_file in uploaded_files:
             upload_file_to_s3(uploaded_file, bucket_name, date, s3_handler)
         st.success("Files uploaded successfully")
         time.sleep(len(uploaded_files) * 5)
-        sqs_handler = sqs.SQSHandler()
         messages = sqs_handler.get_all_sqs_messages(sqs_queue_url)[
             -len(uploaded_files) :
         ]
