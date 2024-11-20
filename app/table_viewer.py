@@ -6,13 +6,6 @@ import api.utils as api_utils
 
 def get_table_config():
     return {
-        "product": {
-            "filter_columns": [
-                {"name": "custom_label", "type": "text"},
-                {"name": "part_number", "type": "text"},
-                {"name": "supplier", "type": "text"},
-            ],
-        },
         "store": {
             "filter_columns": [
                 {"name": "item_id", "type": "integer"},
@@ -26,6 +19,14 @@ def get_table_config():
                 {"name": "part_number", "type": "text"},
                 {"name": "supplier", "type": "text"},
                 {"name": "updated_date", "type": "text"},
+            ],
+        },
+        "ebay": {
+            "filter_columns": [
+                {"name": "item_id", "type": "integer"},
+                {"name": "custom_label", "type": "text"},
+                {"name": "supplier", "type": "text"},
+                {"name": "ebay_store", "type": "text"},
             ],
         },
     }

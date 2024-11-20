@@ -1,14 +1,26 @@
 import requests
+import urllib.parse
 
 # BASE_URL = ""
 
 # BASE_URL = ""
 
-BASE_URL = "http://localhost:8000/"
+
+API_ID = "tsybspea31"
+STAGE = "dev"
+REGION = "eu-west-2"
+BASE_URL = f"https://{API_ID}.execute-api.{REGION}.amazonaws.com/{STAGE}/"
+
+
+# curl -X GET "https://tsybspea31.execute-api.eu-west-2.amazonaws.com/dev/items/?table_name=ebay&limit=5"
+
+# BASE_URL = "http://localhost:8000/"
 
 
 def get_request(endpoint, params=None):
-    response = requests.get(f"{BASE_URL}{endpoint}", params=params)
+    request_url = f"{BASE_URL}{endpoint}/"
+    print(request_url)
+    response = requests.get(request_url, params=params)
     return response.json()
 
 

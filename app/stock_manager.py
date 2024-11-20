@@ -1,13 +1,14 @@
 import streamlit as st
-import os
 import time
 import pandas as pd
 from typing import List, Tuple
 import io
 import zipfile
-from aws_utils import sqs, s3, iam
+from aws_utils import sqs, s3, iam, events
 import api.utils as api_utils
 from utils import PROJECT_BUCKET_NAME
+import uuid
+from datetime import datetime
 
 
 def get_last_csv_from_s3(bucket_name, prefix, s3_handler):
@@ -89,14 +90,44 @@ def handle_file_uploads(uploaded_files, bucket_name, date, s3_handler, sqs_queue
         st.warning("Please upload at least one file first.")
 
 
+def handle_ebay_queue(sqs_queue_url):
+
+    sqs_handler = sqs.SQSHandler()
+    sqs_handler.delete_all_sqs_messages(sqs_queue_url)
+
+    events_handler = events.EventsHandler()
+
+    events_handler.publish_event(
+        "rtg-automotive-generate-ebay-table-lambda-event-bus",
+        "com.oxforddataprocesses",
+        "RtgAutomotiveGenerateEbayTable",
+        {
+            "event_type": "RtgAutomotiveGenerateEbayTable",
+            "user": "admin",
+            "trigger_id": str(uuid.uuid4()),
+            "timestamp": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+        },
+    )
+
+    time.sleep(1)
+    messages = sqs_handler.get_all_sqs_messages(sqs_queue_url)
+    for message in messages:
+        if "ebay" in message["Body"].lower():
+            st.write(message["Body"])
+
+
 def generate_ebay_upload_files():
 
-    api_utils.post_request("items", params={"table_name": "ebay", "type": "update"})
+    sqs_queue_url = "rtg-automotive-lambda-queue"
+    handle_ebay_queue(sqs_queue_url)
 
-    data = api_utils.get_request(
-        "items", params={"table_name": "ebay", "filters": [], "limit": 5}
+    s3_handler = s3.S3Handler()
+    parquet_data = s3_handler.load_parquet_from_s3(
+        PROJECT_BUCKET_NAME, "ebay/data.parquet"
     )
-    df = pd.DataFrame(data)
+
+    df = pd.read_parquet(io.BytesIO(parquet_data))
+
     ebay_df = create_ebay_dataframe(df)
     stores = list(ebay_df["Store"].unique())
     ebay_dfs = [
