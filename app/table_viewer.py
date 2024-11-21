@@ -124,5 +124,7 @@ def main():
     if st.button("Run Query"):
 
         results = api_utils.get_request("items", params)
-
-        st.dataframe(pd.DataFrame(results))
+        if len(results) > 0:
+            st.dataframe(pd.DataFrame(results))
+        else:
+            st.write("No results found")

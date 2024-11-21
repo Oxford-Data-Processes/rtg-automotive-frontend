@@ -2,6 +2,7 @@ import os
 import streamlit as st
 import pandas as pd
 from aws_utils import logs, iam
+import api.utils as api_utils
 
 
 def get_table_columns():
@@ -14,14 +15,7 @@ def get_table_columns():
                 {"name": "supplier", "type": "Text"},
             ],
             "necessary_columns": ["part_number"],
-        },
-        "product": {
-            "columns": [
-                {"name": "custom_label", "type": "Text"},
-                {"name": "part_number", "type": "Text"},
-                {"name": "supplier", "type": "Text"},
-            ],
-            "necessary_columns": ["custom_label"],
+            "partition_column": "supplier",
         },
         "store": {
             "columns": [
@@ -39,8 +33,21 @@ def get_table_columns():
                 {"name": "ebay_store", "type": "Text"},
             ],
             "necessary_columns": ["item_id"],
+            "partition_column": "ebay_store",
         },
     }
+
+
+def get_options(table_name, partition_column):
+
+    params = {
+        "table_name": table_name,
+        "columns": ",".join([partition_column]),
+        "limit": 10000,
+    }
+
+    results = api_utils.get_request("items", params)
+    return list(set([result[partition_column] for result in results]))
 
 
 def main():
@@ -70,6 +77,39 @@ def main():
     )
     st.write(f"Necessary columns: {necessary_columns}")
 
+    data_types = {
+        col: next(
+            (
+                c["type"]
+                for c in table_columns[table_name]["columns"]
+                if c["name"] == col
+            ),
+            None,
+        )
+        for col in selected_columns
+    }
+
+    st.write(f"Partition Column: {table_columns[table_name]['partition_column']}")
+
+    options = get_options(table_name, table_columns[table_name]["partition_column"])
+
+    selected_value = st.selectbox(
+        f"Select {table_columns[table_name]['partition_column']}",
+        options=options,
+        index=0,
+    )
+
+    st.write("Selected Value:", selected_value)
+
+    st.write("Data Types for Selected Columns:")
+    df_display = (
+        pd.DataFrame(data_types.items(), columns=["Column", "Data Type"])
+        .set_index("Column")
+        .transpose()
+    )
+
+    st.dataframe(df_display)
+
     uploaded_file = st.file_uploader("Upload CSV", type=["csv"])
     if uploaded_file is not None:
         df = pd.read_csv(uploaded_file)
@@ -77,23 +117,11 @@ def main():
         if not all(col in df.columns for col in selected_columns):
             st.error("The uploaded CSV must contain the selected columns.")
         else:
-            data_types = {
-                col: next(
-                    (
-                        c["type"]
-                        for c in table_columns[table_name]["columns"]
-                        if c["name"] == col
-                    ),
-                    None,
-                )
-                for col in selected_columns
-            }
-            st.write("Data Types for Selected Columns:")
-            st.dataframe(
-                pd.DataFrame(data_types.items(), columns=["Column", "Data Type"])
-            )
 
-            if st.button("Save Changes"):
+            st.write("Edit Type: ", edit_type)
+            st.write("Number of rows to edit: ", len(df))
+
+            if st.button("Edit Table"):
                 iam.get_aws_credentials(st.secrets["aws_credentials"])
                 logs_handler = logs.LogsHandler()
                 logs_handler.log_action(
