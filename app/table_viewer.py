@@ -103,9 +103,6 @@ def main():
     filter_columns = config[table_selection]["filter_columns"]
     handle_filter_selection(filter_columns)
 
-    print("FILTERS:")
-    print(st.session_state.filters)
-
     if st.button("Clear Filters"):
         st.session_state.filters = {}
 
@@ -116,12 +113,15 @@ def main():
         min_value=0,
     )
 
+    params = {
+        "table_name": table_selection,
+        "filters": json.dumps(st.session_state.filters),
+        "limit": result_limit,
+    }
+    if st.button("View Query"):
+        st.write(params)
+
     if st.button("Run Query"):
-        params = {
-            "table_name": table_selection,
-            "filters": json.dumps(st.session_state.filters),
-            "limit": result_limit,
-        }
 
         results = api_utils.get_request("items", params)
 
