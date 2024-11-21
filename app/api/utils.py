@@ -19,7 +19,11 @@ BASE_URL = f"https://{API_ID}.execute-api.{REGION}.amazonaws.com/{STAGE}/"
 
 def get_request(endpoint, params=None):
     request_url = f"{BASE_URL}{endpoint}/"
+    print("\n")
+    print("REQUEST URL:")
     print(request_url)
+    print("PARAMS:")
+    print(params)
     response = requests.get(request_url, params=params)
     return response.json()
 

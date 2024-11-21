@@ -109,11 +109,10 @@ def handle_ebay_queue(sqs_queue_url):
         },
     )
 
-    time.sleep(1)
+    time.sleep(30)
     messages = sqs_handler.get_all_sqs_messages(sqs_queue_url)
     for message in messages:
-        if "ebay" in message["Body"].lower():
-            st.write(message["Body"])
+        st.write(message["Body"])
 
 
 def generate_ebay_upload_files():

@@ -28,9 +28,6 @@ async def edit_items(
     type: Literal["update", "delete", "append"],
     limit: int = 5,
 ):
-    if table_name == "ebay" and type == "update":
-        print("Triggering SQL query to update ebay table")
-
     current_directory = os.getcwd()
     data_directory = os.path.join(current_directory, "app/api/data")
     file_path = os.path.join(data_directory, f"{table_name}.json")

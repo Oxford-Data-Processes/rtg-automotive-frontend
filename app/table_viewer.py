@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from aws_utils import iam
 import api.utils as api_utils
+import json
 
 
 def get_table_config():
@@ -19,14 +20,6 @@ def get_table_config():
                 {"name": "part_number", "type": "text"},
                 {"name": "supplier", "type": "text"},
                 {"name": "updated_date", "type": "text"},
-            ],
-        },
-        "ebay": {
-            "filter_columns": [
-                {"name": "item_id", "type": "integer"},
-                {"name": "custom_label", "type": "text"},
-                {"name": "supplier", "type": "text"},
-                {"name": "ebay_store", "type": "text"},
             ],
         },
     }
@@ -64,7 +57,10 @@ def handle_filter_selection(filter_columns):
             formatted_filters = format_filters(
                 selected_filter_column, filter_values, filter_column_type
             )
-            st.session_state.filters.extend(formatted_filters)
+            # Change to a dictionary instead of a list
+            if "filters" not in st.session_state:
+                st.session_state.filters = {}
+            st.session_state.filters[selected_filter_column] = filter_values
 
 
 def get_filter_values(selected_filter_column, filter_column_type):
@@ -80,9 +76,9 @@ def get_filter_values(selected_filter_column, filter_column_type):
 
 def format_filters(selected_filter_column, filter_values, filter_column_type):
     if filter_column_type == "text":
-        return [f"{selected_filter_column} = '{value}'" for value in filter_values]
+        return {selected_filter_column: [f"'{value}'" for value in filter_values]}
     else:
-        return [f"{selected_filter_column} = {int(value)}" for value in filter_values]
+        return {selected_filter_column: [int(value) for value in filter_values]}
 
 
 def main():
@@ -95,20 +91,23 @@ def main():
     )
 
     if "filters" not in st.session_state:
-        st.session_state.filters = []
+        st.session_state.filters = {}
 
     if (
         "previous_table_selection" not in st.session_state
         or st.session_state.previous_table_selection != table_selection
     ):
-        st.session_state.filters = []
+        st.session_state.filters = {}
         st.session_state.previous_table_selection = table_selection
 
     filter_columns = config[table_selection]["filter_columns"]
     handle_filter_selection(filter_columns)
 
+    print("FILTERS:")
+    print(st.session_state.filters)
+
     if st.button("Clear Filters"):
-        st.session_state.filters = []
+        st.session_state.filters = {}
 
     result_limit = st.number_input(
         "Number of results to display (default is 10, set it to 0 for ALL)",
@@ -120,10 +119,10 @@ def main():
     if st.button("Run Query"):
         params = {
             "table_name": table_selection,
-            "filters": st.session_state.filters,
+            "filters": json.dumps(st.session_state.filters),
             "limit": result_limit,
         }
 
-        df_results = api_utils.get_request("items", params)
+        results = api_utils.get_request("items", params)
 
-        st.dataframe(pd.DataFrame(df_results))
+        st.dataframe(pd.DataFrame(results))
