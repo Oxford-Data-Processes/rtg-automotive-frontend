@@ -54,7 +54,7 @@ def display_functions(tab_functions) -> None:
 
 
 def main() -> None:
-    st.title("Configuration")
+    st.title("Stock Manager Configuration")
     json_key: str = "config/process_stock_feed_config.json"
 
     try:

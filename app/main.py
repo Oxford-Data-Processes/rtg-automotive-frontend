@@ -1,5 +1,5 @@
 import bulk_edits
-import config
+import app.stock_manager_config as stock_manager_config
 import log_viewer
 import stock_manager
 import streamlit as st
@@ -37,8 +37,8 @@ if __name__ == "__main__":
             "Choose the app",
             (
                 "Stock Manager",
+                "Stock Manager Configuration",
                 "Table Viewer",
-                "Config",
                 "Bulk Edits",
                 "Log Viewer",
             ),
@@ -46,10 +46,10 @@ if __name__ == "__main__":
 
         if app_mode == "Stock Manager":
             stock_manager.main()
+        elif app_mode == "Stock Manager Configuration":
+            stock_manager_config.main()
         elif app_mode == "Table Viewer":
             table_viewer.main()
-        elif app_mode == "Config":
-            config.main()
         elif app_mode == "Bulk Edits":
             bulk_edits.main()
         elif app_mode == "Log Viewer":
