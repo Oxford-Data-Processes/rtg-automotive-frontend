@@ -129,7 +129,7 @@ def generate_ebay_upload_files() -> None:
 
     s3_handler = s3.S3Handler()
     parquet_data = s3_handler.load_parquet_from_s3(
-        PROJECT_BUCKET_NAME, "ebay/data.parquet"
+        PROJECT_BUCKET_NAME, "ebay/table/data.parquet"
     )
 
     df = pd.read_parquet(io.BytesIO(parquet_data))
@@ -141,11 +141,15 @@ def generate_ebay_upload_files() -> None:
         for store in stores
     ]
 
-    zip_buffer = zip_dataframes(ebay_dfs)
+    today_date = datetime.now().strftime("%Y-%m-%d")
+    zip_data = zip_dataframes(ebay_dfs).getvalue()
+    s3_handler.upoad_generic_file_to_s3(
+        PROJECT_BUCKET_NAME, f"ebay/{today_date}/ebay_upload_files.zip", zip_data
+    )
 
     st.download_button(
         label="Download eBay Upload Files",
-        data=zip_buffer.getvalue(),
+        data=zip_data,
         file_name="ebay_upload_files.zip",
         mime="application/zip",
     )
