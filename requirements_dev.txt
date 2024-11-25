@@ -5,4 +5,5 @@ fastapi
 requests
 openpyxl
 mypy
+types-requests
 git+https://github.com/Oxford-Data-Processes/aws-utils.git

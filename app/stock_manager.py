@@ -162,14 +162,19 @@ def main() -> None:
     uploaded_files = st.file_uploader(
         "Upload Excel files", type=["xlsx"], accept_multiple_files=True
     )
-    date = st.date_input("Select a date", value=pd.Timestamp.now().date()).strftime(
-        "%Y-%m-%d"
-    )
-
-    if st.button("Upload Files") and date:
-        handle_file_uploads(
-            uploaded_files, PROJECT_BUCKET_NAME, date, s3_handler, sqs_queue_url
-        )
+    date = st.date_input("Select a date", value=pd.Timestamp.now().date())
+    date = str(date.strftime("%Y-%m-%d"))
+    if st.button("Upload Files") and date is not None:
+        if uploaded_files:
+            handle_file_uploads(
+                uploaded_files,
+                PROJECT_BUCKET_NAME,
+                date,
+                s3_handler,
+                sqs_queue_url,
+            )
+        else:
+            st.warning("Please upload at least one file first.")
 
     if st.button("Generate eBay Store Upload Files"):
         generate_ebay_upload_files()

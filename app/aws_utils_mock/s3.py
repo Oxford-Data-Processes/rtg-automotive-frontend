@@ -100,7 +100,7 @@ class S3Handler:
         Returns:
             bytes: The raw Excel data.
         """
-        pass
+        return b""
 
     def upload_parquet_to_s3(
         self, bucket_name: str, parquet_key: str, parquet_data: bytes
@@ -115,7 +115,9 @@ class S3Handler:
         """
         pass
 
-    def upload_excel_to_s3(self, bucket_name: str, excel_key: str, excel_data: bytes):
+    def upload_excel_to_s3(
+        self, bucket_name: str, excel_key: str, excel_data: bytes
+    ) -> None:
         """
         Upload an Excel file to S3.
 
