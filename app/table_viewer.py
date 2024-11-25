@@ -1,6 +1,7 @@
 import json
 import zipfile
 from io import BytesIO
+from typing import Dict, List, Any, Optional
 
 import api.utils as api_utils
 import pandas as pd
@@ -8,7 +9,7 @@ import streamlit as st
 from aws_utils import iam
 
 
-def get_table_config():
+def get_table_config() -> Dict[str, Dict[str, List[Dict[str, str]]]]:
     return {
         "store": {
             "filter_columns": [
@@ -28,45 +29,51 @@ def get_table_config():
     }
 
 
-def handle_filter_selection(filter_columns):
+def handle_filter_selection(filter_columns: List[Dict[str, str]]) -> None:
+    selected_filter_column = select_filter_column(filter_columns)
+    if selected_filter_column:
+        filter_column_type = get_filter_column_type(
+            filter_columns, selected_filter_column
+        )
+        single_value = st.text_input(
+            f"Enter a single value for {selected_filter_column}"
+        )
+        filter_values = get_filter_values(selected_filter_column, filter_column_type)
+        update_filter_values(selected_filter_column, single_value, filter_values)
+
+
+def select_filter_column(filter_columns: List[Dict[str, str]]) -> str:
     filter_column_names = [col["name"] for col in filter_columns]
-    selected_filter_column = st.selectbox(
+    return st.selectbox(
         "Select a filter column",
         options=filter_column_names,
         key=f"filter_column_{len(st.session_state.filters)}",
         index=0,
     )
 
-    if selected_filter_column:
-        filter_column_type = next(
-            col["type"]
-            for col in filter_columns
-            if col["name"] == selected_filter_column
-        )
 
-        # Option to provide a single value
-        single_value = st.text_input(
-            f"Enter a single value for {selected_filter_column}"
-        )
-
-        # Get filter values from CSV upload
-        filter_values = get_filter_values(selected_filter_column, filter_column_type)
-
-        # Combine single value and filter values from CSV
-        if single_value:
-            filter_values.append(single_value)
-
-        if filter_values:
-            formatted_filters = format_filters(
-                selected_filter_column, filter_values, filter_column_type
-            )
-            # Change to a dictionary instead of a list
-            if "filters" not in st.session_state:
-                st.session_state.filters = {}
-            st.session_state.filters[selected_filter_column] = filter_values
+def get_filter_column_type(
+    filter_columns: List[Dict[str, str]], selected_filter_column: str
+) -> str:
+    return next(
+        col["type"] for col in filter_columns if col["name"] == selected_filter_column
+    )
 
 
-def get_filter_values(selected_filter_column, filter_column_type):
+def update_filter_values(
+    selected_filter_column: str, single_value: str, filter_values: List[Any]
+) -> None:
+    if single_value:
+        filter_values.append(single_value)
+    if filter_values:
+        if "filters" not in st.session_state:
+            st.session_state.filters = {}
+        st.session_state.filters[selected_filter_column] = filter_values
+
+
+def get_filter_values(
+    selected_filter_column: str, filter_column_type: str
+) -> List[Any]:
     uploaded_file = st.file_uploader(
         f"Upload CSV for {selected_filter_column}", type=["csv"]
     )
@@ -77,14 +84,7 @@ def get_filter_values(selected_filter_column, filter_column_type):
     return []
 
 
-def format_filters(selected_filter_column, filter_values, filter_column_type):
-    if filter_column_type == "text":
-        return {selected_filter_column: [f"'{value}'" for value in filter_values]}
-    else:
-        return {selected_filter_column: [int(value) for value in filter_values]}
-
-
-def convert_to_excel(data):
+def convert_to_excel(data: List[Dict[str, Any]]) -> bytes:
     df = pd.DataFrame(data)
     output = BytesIO()
     df.to_excel(output, index=False, engine="openpyxl")
@@ -92,7 +92,7 @@ def convert_to_excel(data):
     return output.getvalue()
 
 
-def download_excels_as_zip(data_dictionary):
+def download_excels_as_zip(data_dictionary: Dict[str, bytes]) -> None:
     zip_buffer = BytesIO()
     with zipfile.ZipFile(zip_buffer, "w") as zip_file:
         for file_name, excel_data in data_dictionary.items():
@@ -107,45 +107,57 @@ def download_excels_as_zip(data_dictionary):
     )
 
 
-def run_query(params, table_selection, split_by_column):
+def run_query(
+    params: Dict[str, Any], table_selection: str, split_by_column: str
+) -> None:
     if st.button("Run Query"):
         del params["split_by_column"]
         results = api_utils.get_request("items", params)
         if results:
-            st.dataframe(pd.DataFrame(results))
-            if split_by_column:  # Check if split_by_column is not empty
-                # Ensure results is a DataFrame for proper indexing
-                results_df = pd.DataFrame(results)
-                if split_by_column in results_df.columns:
-                    unique_values = results_df[split_by_column].unique()
-                    data_dictionary = {}
-                    for value in unique_values:
-                        filtered_results = results_df[
-                            results_df[split_by_column] == value
-                        ]
-                        data_dictionary[
-                            f"{table_selection}_{value}.xlsx"
-                        ] = convert_to_excel(filtered_results.to_dict(orient="records"))
-                    download_excels_as_zip(data_dictionary)
-
-                else:
-                    st.write(f"Column '{split_by_column}' not found in results.")
-            else:
-                data_dictionary = {f"{table_selection}.xlsx": convert_to_excel(results)}
-                download_excels_as_zip(data_dictionary)
+            display_results(results, table_selection, split_by_column)
         else:
             st.write("No results found")
 
 
-def main():
-    st.title("Table Viewer")
-    iam.get_aws_credentials(st.secrets["aws_credentials"])
-    config = get_table_config()
+def display_results(
+    results: List[Dict[str, Any]], table_selection: str, split_by_column: str
+) -> None:
+    st.dataframe(pd.DataFrame(results))
+    if split_by_column:
+        create_split_downloads(results, table_selection, split_by_column)
+    else:
+        download_single_file(results, table_selection)
 
-    table_selection = st.selectbox(
+
+def create_split_downloads(
+    results: List[Dict[str, Any]], table_selection: str, split_by_column: str
+) -> None:
+    results_df = pd.DataFrame(results)
+    if split_by_column in results_df.columns:
+        unique_values = results_df[split_by_column].unique()
+        data_dictionary = {}
+        for value in unique_values:
+            filtered_results = results_df[results_df[split_by_column] == value]
+            data_dictionary[f"{table_selection}_{value}.xlsx"] = convert_to_excel(
+                filtered_results.to_dict(orient="records")
+            )
+        download_excels_as_zip(data_dictionary)
+    else:
+        st.write(f"Column '{split_by_column}' not found in results.")
+
+
+def download_single_file(results: List[Dict[str, Any]], table_selection: str) -> None:
+    data_dictionary = {f"{table_selection}.xlsx": convert_to_excel(results)}
+    download_excels_as_zip(data_dictionary)
+
+
+def select_table(config: Dict[str, Any]) -> str:
+    return st.selectbox(
         "Select a table", options=list(config.keys()), key="table_selection"
     )
 
+
+def initialize_filters(table_selection: str) -> None:
     if "filters" not in st.session_state:
         st.session_state.filters = {}
 
@@ -156,32 +168,55 @@ def main():
         st.session_state.filters = {}
         st.session_state.previous_table_selection = table_selection
 
-    filter_columns = config[table_selection]["filter_columns"]
-    handle_filter_selection(filter_columns)
 
+def clear_filters_button() -> None:
     if st.button("Clear Filters"):
         st.session_state.filters = {}
 
-    result_limit = st.number_input(
+
+def get_result_limit() -> int:
+    return st.number_input(
         "Number of results to display (default is 10, set it to 0 for ALL)",
         value=10,
         format="%d",
         min_value=0,
     )
 
-    params = {
+
+def build_query_params(table_selection: str, result_limit: int) -> Dict[str, Any]:
+    return {
         "table_name": table_selection,
         "filters": json.dumps(st.session_state.filters),
         "limit": result_limit,
     }
 
-    split_by_column = st.selectbox(
+
+def select_split_by_column(filter_columns: List[Dict[str, Any]]) -> str:
+    return st.selectbox(
         "Split by column (optional)",
         options=[""] + [item["name"] for item in filter_columns],
         key="split_by_selection",
         index=0,
     )
 
+
+def main() -> None:
+    st.title("Table Viewer")
+    iam.get_aws_credentials(st.secrets["aws_credentials"])
+    config = get_table_config()
+
+    table_selection = select_table(config)
+    initialize_filters(table_selection)
+
+    filter_columns = config[table_selection]["filter_columns"]
+    handle_filter_selection(filter_columns)
+
+    clear_filters_button()
+    result_limit = get_result_limit()
+
+    params = build_query_params(table_selection, result_limit)
+
+    split_by_column = select_split_by_column(filter_columns)
     params["split_by_column"] = split_by_column
 
     st.write("Query Parameters:")

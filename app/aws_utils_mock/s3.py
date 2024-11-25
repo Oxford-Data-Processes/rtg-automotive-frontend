@@ -38,7 +38,7 @@ class S3Utils:
 
 
 class S3Handler:
-    def __init__(self):
+    def __init__(self) -> None:
         self.s3_client = boto3.client(
             "s3",
             aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID"),
@@ -104,7 +104,7 @@ class S3Handler:
 
     def upload_parquet_to_s3(
         self, bucket_name: str, parquet_key: str, parquet_data: bytes
-    ):
+    ) -> None:
         """
         Upload a Parquet file to S3.
 

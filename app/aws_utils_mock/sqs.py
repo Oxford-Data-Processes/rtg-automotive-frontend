@@ -1,8 +1,6 @@
 import json
 from typing import Dict, List, Optional
 
-import boto3
-
 
 class SQSHandler:
     def __init__(self) -> None:

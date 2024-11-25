@@ -3,16 +3,17 @@ import time
 import uuid
 import zipfile
 from datetime import datetime
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
-import api.utils as api_utils
 import pandas as pd
 import streamlit as st
 from aws_utils import events, iam, s3, sqs
 from utils import PROJECT_BUCKET_NAME
 
 
-def get_last_csv_from_s3(bucket_name, prefix, s3_handler):
+def get_last_csv_from_s3(
+    bucket_name: str, prefix: str, s3_handler: s3.S3Handler
+) -> Optional[str]:
     response = s3_handler.list_objects(bucket_name, prefix)
     csv_files = [obj for obj in response if obj["Key"].endswith(".csv")]
     csv_files.sort(key=lambda x: x["LastModified"], reverse=True)
@@ -59,7 +60,9 @@ def create_ebay_dataframe(ebay_df: pd.DataFrame) -> pd.DataFrame:
     return ebay_df
 
 
-def upload_file_to_s3(file, bucket_name, date, s3_handler):
+def upload_file_to_s3(
+    file: io.BytesIO, bucket_name: str, date: str, s3_handler: s3.S3Handler
+) -> None:
     year = date.split("-")[0]
     month = date.split("-")[1]
     day = date.split("-")[2]
@@ -72,7 +75,13 @@ def upload_file_to_s3(file, bucket_name, date, s3_handler):
         st.error(f"Error uploading file: {str(e)}")
 
 
-def handle_file_uploads(uploaded_files, bucket_name, date, s3_handler, sqs_queue_url):
+def handle_file_uploads(
+    uploaded_files: List[io.BytesIO],
+    bucket_name: str,
+    date: str,
+    s3_handler: s3.S3Handler,
+    sqs_queue_url: str,
+) -> None:
     if uploaded_files:
         sqs_handler = sqs.SQSHandler()
         sqs_handler.delete_all_sqs_messages(sqs_queue_url)
@@ -90,7 +99,7 @@ def handle_file_uploads(uploaded_files, bucket_name, date, s3_handler, sqs_queue
         st.warning("Please upload at least one file first.")
 
 
-def handle_ebay_queue(sqs_queue_url):
+def handle_ebay_queue(sqs_queue_url: str) -> None:
     sqs_handler = sqs.SQSHandler()
     sqs_handler.delete_all_sqs_messages(sqs_queue_url)
 
@@ -114,7 +123,7 @@ def handle_ebay_queue(sqs_queue_url):
         st.write(message["Body"])
 
 
-def generate_ebay_upload_files():
+def generate_ebay_upload_files() -> None:
     sqs_queue_url = "rtg-automotive-lambda-queue"
     handle_ebay_queue(sqs_queue_url)
 
@@ -142,7 +151,7 @@ def generate_ebay_upload_files():
     )
 
 
-def main():
+def main() -> None:
     st.title("Stock Manager")
     iam.get_aws_credentials(st.secrets["aws_credentials"])
 
