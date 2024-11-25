@@ -1,7 +1,7 @@
 import bulk_edits
-import app.stock_manager_config as stock_manager_config
 import log_viewer
 import stock_manager
+import stock_manager_config
 import streamlit as st
 import table_viewer
 

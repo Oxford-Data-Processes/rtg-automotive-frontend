@@ -23,7 +23,7 @@ def update_config(
         updated_config: str = st.text_area(
             "Edit Config JSON",
             json.dumps(config_data, indent=4),
-            height=400,  # Increased height for larger editor
+            height=400,
         )
         if st.button("Save Config"):
             save_config(s3_handler, json_key, updated_config)
