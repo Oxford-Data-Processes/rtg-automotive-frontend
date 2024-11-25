@@ -1,10 +1,11 @@
-import streamlit as st
-import pandas as pd
-from aws_utils import iam
-import api.utils as api_utils
 import json
-from io import BytesIO
 import zipfile
+from io import BytesIO
+
+import api.utils as api_utils
+import pandas as pd
+import streamlit as st
+from aws_utils import iam
 
 
 def get_table_config():
@@ -122,9 +123,9 @@ def run_query(params, table_selection, split_by_column):
                         filtered_results = results_df[
                             results_df[split_by_column] == value
                         ]
-                        data_dictionary[f"{table_selection}_{value}.xlsx"] = (
-                            convert_to_excel(filtered_results.to_dict(orient="records"))
-                        )
+                        data_dictionary[
+                            f"{table_selection}_{value}.xlsx"
+                        ] = convert_to_excel(filtered_results.to_dict(orient="records"))
                     download_excels_as_zip(data_dictionary)
 
                 else:

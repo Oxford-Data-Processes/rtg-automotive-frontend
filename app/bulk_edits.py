@@ -1,8 +1,9 @@
 import os
-import streamlit as st
-import pandas as pd
-from aws_utils import logs, iam
+
 import api.utils as api_utils
+import pandas as pd
+import streamlit as st
+from aws_utils import iam, logs
 
 
 def get_table_columns():
@@ -39,7 +40,6 @@ def get_table_columns():
 
 
 def get_options(table_name, partition_column):
-
     params = {
         "table_name": table_name,
         "columns": ",".join([partition_column]),
@@ -117,14 +117,12 @@ def main():
         if not all(col in df.columns for col in selected_columns):
             st.error("The uploaded CSV must contain the selected columns.")
         else:
-
             st.write("Edit Type: ", edit_type)
             st.write("Number of rows to edit: ", len(df))
 
             if st.button("Edit Table"):
                 try:
                     with st.spinner("Editing table..."):
-
                         json_data = df.to_json(orient="records")
                         for item in json_data:
                             params = {

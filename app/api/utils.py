@@ -1,10 +1,4 @@
 import requests
-import urllib.parse
-
-# BASE_URL = ""
-
-# BASE_URL = ""
-
 
 API_ID = "tsybspea31"
 STAGE = "dev"

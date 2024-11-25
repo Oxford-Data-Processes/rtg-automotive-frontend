@@ -1,18 +1,18 @@
-import streamlit as st
-import time
-import pandas as pd
-from typing import List, Tuple
 import io
-import zipfile
-from aws_utils import sqs, s3, iam, events
-import api.utils as api_utils
-from utils import PROJECT_BUCKET_NAME
+import time
 import uuid
+import zipfile
 from datetime import datetime
+from typing import List, Tuple
+
+import api.utils as api_utils
+import pandas as pd
+import streamlit as st
+from aws_utils import events, iam, s3, sqs
+from utils import PROJECT_BUCKET_NAME
 
 
 def get_last_csv_from_s3(bucket_name, prefix, s3_handler):
-
     response = s3_handler.list_objects(bucket_name, prefix)
     csv_files = [obj for obj in response if obj["Key"].endswith(".csv")]
     csv_files.sort(key=lambda x: x["LastModified"], reverse=True)
@@ -91,7 +91,6 @@ def handle_file_uploads(uploaded_files, bucket_name, date, s3_handler, sqs_queue
 
 
 def handle_ebay_queue(sqs_queue_url):
-
     sqs_handler = sqs.SQSHandler()
     sqs_handler.delete_all_sqs_messages(sqs_queue_url)
 
@@ -116,7 +115,6 @@ def handle_ebay_queue(sqs_queue_url):
 
 
 def generate_ebay_upload_files():
-
     sqs_queue_url = "rtg-automotive-lambda-queue"
     handle_ebay_queue(sqs_queue_url)
 
@@ -145,7 +143,6 @@ def generate_ebay_upload_files():
 
 
 def main():
-
     st.title("Stock Manager")
     iam.get_aws_credentials(st.secrets["aws_credentials"])
 

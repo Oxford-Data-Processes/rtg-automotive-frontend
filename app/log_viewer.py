@@ -1,7 +1,8 @@
-import streamlit as st
-import pandas as pd
-from aws_utils import logs, iam
 import os
+
+import pandas as pd
+import streamlit as st
+from aws_utils import iam, logs
 
 
 def load_logs(logs_handler, bucket_name):
@@ -12,7 +13,6 @@ def load_logs(logs_handler, bucket_name):
 
 
 def main():
-
     project = "rtg-automotive"
     bucket_name = f"{project}-bucket-{os.environ['AWS_ACCOUNT_ID']}"
     st.title("Logs")

@@ -1,6 +1,7 @@
-from aws_utils import iam
-import streamlit as st
 import os
+
+import streamlit as st
+from aws_utils import iam
 
 iam.get_aws_credentials(st.secrets["aws_credentials"])
 

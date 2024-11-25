@@ -1,6 +1,7 @@
-import boto3
 import json
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
+
+import boto3
 
 
 class SQSHandler:

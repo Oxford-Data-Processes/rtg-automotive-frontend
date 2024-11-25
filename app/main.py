@@ -1,9 +1,9 @@
-import streamlit as st
-import stock_manager
-import table_viewer
-import config
 import bulk_edits
+import config
 import log_viewer
+import stock_manager
+import streamlit as st
+import table_viewer
 
 STAGE = st.secrets["aws_credentials"]["STAGE"]
 

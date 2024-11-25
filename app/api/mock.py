@@ -1,8 +1,9 @@
-from fastapi import FastAPI
 import json
-from fastapi.responses import JSONResponse
 import os
-from typing import Optional, List, Literal
+from typing import List, Literal, Optional
+
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 
 app = FastAPI()
 
