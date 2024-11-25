@@ -3,6 +3,8 @@ import pandas as pd
 from aws_utils import iam
 import api.utils as api_utils
 import json
+from io import BytesIO
+import zipfile
 
 
 def get_table_config():
@@ -81,6 +83,59 @@ def format_filters(selected_filter_column, filter_values, filter_column_type):
         return {selected_filter_column: [int(value) for value in filter_values]}
 
 
+def convert_to_excel(data):
+    df = pd.DataFrame(data)
+    output = BytesIO()
+    df.to_excel(output, index=False, engine="openpyxl")
+    output.seek(0)
+    return output.getvalue()
+
+
+def download_excels_as_zip(data_dictionary):
+    zip_buffer = BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w") as zip_file:
+        for file_name, excel_data in data_dictionary.items():
+            zip_file.writestr(file_name, excel_data)
+
+    zip_buffer.seek(0)
+    st.download_button(
+        label="Download All Excel Files as Zip",
+        data=zip_buffer,
+        file_name="excel_files.zip",
+        mime="application/zip",
+    )
+
+
+def run_query(params, table_selection, split_by_column):
+    if st.button("Run Query"):
+        del params["split_by_column"]
+        results = api_utils.get_request("items", params)
+        if results:
+            st.dataframe(pd.DataFrame(results))
+            if split_by_column:  # Check if split_by_column is not empty
+                # Ensure results is a DataFrame for proper indexing
+                results_df = pd.DataFrame(results)
+                if split_by_column in results_df.columns:
+                    unique_values = results_df[split_by_column].unique()
+                    data_dictionary = {}
+                    for value in unique_values:
+                        filtered_results = results_df[
+                            results_df[split_by_column] == value
+                        ]
+                        data_dictionary[f"{table_selection}_{value}.xlsx"] = (
+                            convert_to_excel(filtered_results.to_dict(orient="records"))
+                        )
+                    download_excels_as_zip(data_dictionary)
+
+                else:
+                    st.write(f"Column '{split_by_column}' not found in results.")
+            else:
+                data_dictionary = {f"{table_selection}.xlsx": convert_to_excel(results)}
+                download_excels_as_zip(data_dictionary)
+        else:
+            st.write("No results found")
+
+
 def main():
     st.title("Table Viewer")
     iam.get_aws_credentials(st.secrets["aws_credentials"])
@@ -118,13 +173,17 @@ def main():
         "filters": json.dumps(st.session_state.filters),
         "limit": result_limit,
     }
-    if st.button("View Query"):
-        st.write(params)
 
-    if st.button("Run Query"):
+    split_by_column = st.selectbox(
+        "Split by column (optional)",
+        options=[""] + [item["name"] for item in filter_columns],
+        key="split_by_selection",
+        index=0,
+    )
 
-        results = api_utils.get_request("items", params)
-        if len(results) > 0:
-            st.dataframe(pd.DataFrame(results))
-        else:
-            st.write("No results found")
+    params["split_by_column"] = split_by_column
+
+    st.write("Query Parameters:")
+    st.write(params)
+
+    run_query(params, table_selection, split_by_column)

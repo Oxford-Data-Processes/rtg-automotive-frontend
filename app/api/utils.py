@@ -12,9 +12,7 @@ REGION = "eu-west-2"
 BASE_URL = f"https://{API_ID}.execute-api.{REGION}.amazonaws.com/{STAGE}/"
 
 
-# curl -X GET "https://tsybspea31.execute-api.eu-west-2.amazonaws.com/dev/items/?table_name=ebay&limit=5"
-
-# BASE_URL = "http://localhost:8000/"
+BASE_URL = "http://localhost:8000/"
 
 
 def get_request(endpoint, params=None):
@@ -29,5 +27,9 @@ def get_request(endpoint, params=None):
 
 
 def post_request(endpoint, params=None):
-    response = requests.post(f"{BASE_URL}{endpoint}", params=params)
+    response = requests.post(
+        f"{BASE_URL}{endpoint}/?table_name={params['table_name']}&type={params['type']}",
+        headers={"Content-Type": "application/json"},
+        json=params["payload"],
+    )
     return response.json()

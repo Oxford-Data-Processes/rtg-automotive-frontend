@@ -122,12 +122,26 @@ def main():
             st.write("Number of rows to edit: ", len(df))
 
             if st.button("Edit Table"):
-                iam.get_aws_credentials(st.secrets["aws_credentials"])
-                logs_handler = logs.LogsHandler()
-                logs_handler.log_action(
-                    f"rtg-automotive-bucket-{os.environ['AWS_ACCOUNT_ID']}",
-                    "frontend",
-                    f"{edit_type.upper()} | Table: {table_name} | Number of Edits: {len(df)}",
-                    "admin",
-                )
-                st.success("Changes saved to the database.")
+                try:
+                    with st.spinner("Editing table..."):
+
+                        json_data = df.to_json(orient="records")
+                        for item in json_data:
+                            params = {
+                                "table_name": table_name,
+                                "type": edit_type,
+                                "payload": item,
+                            }
+                            api_utils.post_request("items", params)
+
+                        iam.get_aws_credentials(st.secrets["aws_credentials"])
+                        logs_handler = logs.LogsHandler()
+                        logs_handler.log_action(
+                            f"rtg-automotive-bucket-{os.environ['AWS_ACCOUNT_ID']}",
+                            "frontend",
+                            f"{edit_type.upper()} | table={table_name} | number_of_edits={len(df)}",
+                            "admin",
+                        )
+                        st.success("Changes saved to the database.")
+                except Exception as e:
+                    st.error(f"Error: {e}")
