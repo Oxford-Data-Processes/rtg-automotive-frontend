@@ -116,11 +116,14 @@ def handle_ebay_queue(sqs_queue_url: str) -> None:
             "timestamp": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
         },
     )
-
-    time.sleep(30)
-    messages = sqs_handler.get_all_sqs_messages(sqs_queue_url)
-    for message in messages:
-        st.write(message["Body"])
+    with st.spinner("Generating eBay Table..."):
+        while True:
+            messages = sqs_handler.get_all_sqs_messages(sqs_queue_url)
+            for message in messages:
+                if message.get("Subject") == "EBAY_TABLE_GENERATED":
+                    st.write(message["Body"])
+                    return
+            time.sleep(5)
 
 
 def generate_ebay_upload_files() -> None:

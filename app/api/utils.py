@@ -1,12 +1,16 @@
 import requests
+from aws_utils import api_gateway, iam
+import streamlit as st
+import os
 
-API_ID = "tsybspea31"
-STAGE = "dev"
-REGION = "eu-west-2"
-BASE_URL = f"https://{API_ID}.execute-api.{REGION}.amazonaws.com/{STAGE}/"
+iam.get_aws_credentials(st.secrets["aws_credentials"])
 
+api_gateway_handler = api_gateway.APIGatewayHandler()
+api_id = api_gateway_handler.search_api_by_name("rtg-automotive-api")
 
-BASE_URL = "http://localhost:8000/"
+BASE_URL = f"https://{api_id}.execute-api.{os.environ['AWS_REGION']}.amazonaws.com/{os.environ['STAGE'].lower()}/"
+
+# BASE_URL = "http://localhost:8000/"
 
 
 def get_request(endpoint, params=None):
