@@ -6,4 +6,5 @@ requests
 openpyxl
 mypy
 types-requests
+mysql-connector-python
 git+https://github.com/Oxford-Data-Processes/aws-utils.git

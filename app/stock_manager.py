@@ -4,20 +4,14 @@ import uuid
 import zipfile
 from datetime import datetime
 from typing import List, Tuple, Optional
+import os
+
+from database import run_query
 
 import pandas as pd
 import streamlit as st
 from aws_utils import events, iam, s3, sqs
 from utils import PROJECT_BUCKET_NAME
-
-
-def get_last_csv_from_s3(
-    bucket_name: str, prefix: str, s3_handler: s3.S3Handler
-) -> Optional[str]:
-    response = s3_handler.list_objects(bucket_name, prefix)
-    csv_files = [obj for obj in response if obj["Key"].endswith(".csv")]
-    csv_files.sort(key=lambda x: x["LastModified"], reverse=True)
-    return csv_files[0]["Key"] if csv_files else None
 
 
 def zip_dataframes(dataframes: List[Tuple[pd.DataFrame, str]]) -> io.BytesIO:
@@ -99,9 +93,39 @@ def handle_file_uploads(
         st.warning("Please upload at least one file first.")
 
 
+def generate_helper_tables() -> None:
+    run_query("DROP TABLE IF EXISTS supplier_stock_ranked;")
+    supplier_stock_ranked_file_path = os.path.join(
+        os.path.dirname(__file__), "sql", "supplier_stock_ranked.sql"
+    )
+    supplier_stock_ranked_sql = open(supplier_stock_ranked_file_path).read()
+    run_query(supplier_stock_ranked_sql)
+
+    run_query("DROP TABLE IF EXISTS store_filtered;")
+    store_filtered_file_path = os.path.join(
+        os.path.dirname(__file__), "sql", "store_filtered.sql"
+    )
+    store_filtered_sql = open(store_filtered_file_path).read()
+    run_query(store_filtered_sql)
+
+
 def handle_ebay_queue(sqs_queue_url: str) -> None:
     sqs_handler = sqs.SQSHandler()
     sqs_handler.delete_all_sqs_messages(sqs_queue_url)
+
+    with st.spinner(
+        "Generating helper tables, this may take approximately 5 minutes..."
+    ):
+        start_time = time.time()
+        st.write(
+            f"Generating helper tables start time: {datetime.fromtimestamp(start_time).strftime('%Y-%m-%d %H:%M:%S')}"
+        )
+        # generate_helper_tables()
+        time_taken = time.time() - start_time
+        minutes, seconds = divmod(time_taken, 60)
+        st.write(
+            f"Helper tables generated successfully in {int(minutes)} minutes and {seconds:.2f} seconds."
+        )
 
     events_handler = events.EventsHandler()
 
@@ -116,14 +140,14 @@ def handle_ebay_queue(sqs_queue_url: str) -> None:
             "timestamp": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
         },
     )
-    with st.spinner("Generating eBay Table..."):
-        while True:
-            messages = sqs_handler.get_all_sqs_messages(sqs_queue_url)
-            for message in messages:
-                if message.get("Subject") == "EBAY_TABLE_GENERATED":
-                    st.write(message["Body"])
-                    return
-            time.sleep(5)
+    with st.spinner(
+        "Generating eBay upload files, this may take approximately 10 minutes..."
+    ):
+        start_time = time.time()
+        st.write(
+            f"Generating eBay upload files start time: {datetime.fromtimestamp(start_time).strftime('%Y-%m-%d %H:%M:%S')}"
+        )
+        time.sleep(10)
 
 
 def generate_ebay_upload_files() -> None:
@@ -146,7 +170,7 @@ def generate_ebay_upload_files() -> None:
 
     today_date = datetime.now().strftime("%Y-%m-%d")
     zip_data = zip_dataframes(ebay_dfs).getvalue()
-    s3_handler.upoad_generic_file_to_s3(
+    s3_handler.upload_generic_file_to_s3(
         PROJECT_BUCKET_NAME, f"ebay/{today_date}/ebay_upload_files.zip", zip_data
     )
 

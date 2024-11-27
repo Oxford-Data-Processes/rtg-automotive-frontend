@@ -2,6 +2,7 @@ import bulk_edits
 import log_viewer
 import stock_manager
 import stock_manager_config
+import stock_manager_file_store
 import streamlit as st
 import table_viewer
 
@@ -38,6 +39,7 @@ if __name__ == "__main__":
             (
                 "Stock Manager",
                 "Stock Manager Configuration",
+                "Stock Manager File Store",
                 "Table Viewer",
                 "Bulk Edits",
                 "Log Viewer",
@@ -48,6 +50,8 @@ if __name__ == "__main__":
             stock_manager.main()
         elif app_mode == "Stock Manager Configuration":
             stock_manager_config.main()
+        elif app_mode == "Stock Manager File Store":
+            stock_manager_file_store.main()
         elif app_mode == "Table Viewer":
             table_viewer.main()
         elif app_mode == "Bulk Edits":

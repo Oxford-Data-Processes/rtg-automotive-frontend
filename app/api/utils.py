@@ -5,10 +5,12 @@ import os
 
 iam.get_aws_credentials(st.secrets["aws_credentials"])
 
+STAGE = st.secrets["aws_credentials"]["STAGE"]
+
 api_gateway_handler = api_gateway.APIGatewayHandler()
 api_id = api_gateway_handler.search_api_by_name("rtg-automotive-api")
 
-BASE_URL = f"https://{api_id}.execute-api.{os.environ['AWS_REGION']}.amazonaws.com/{os.environ['STAGE'].lower()}/"
+BASE_URL = f"https://{api_id}.execute-api.{os.environ['AWS_REGION']}.amazonaws.com/{STAGE.lower()}/"
 
 # BASE_URL = "http://localhost:8000/"
 
