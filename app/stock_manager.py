@@ -111,21 +111,22 @@ def generate_helper_tables() -> None:
 
 def handle_ebay_queue(sqs_queue_url: str) -> None:
     sqs_handler = sqs.SQSHandler()
-    sqs_handler.delete_all_sqs_messages(sqs_queue_url)
 
-    with st.spinner(
-        "Generating helper tables, this may take approximately 5 minutes..."
-    ):
-        start_time = time.time()
-        st.write(
-            f"Generating helper tables start time: {datetime.fromtimestamp(start_time).strftime('%Y-%m-%d %H:%M:%S')}"
-        )
-        # generate_helper_tables()
-        time_taken = time.time() - start_time
-        minutes, seconds = divmod(time_taken, 60)
-        st.write(
-            f"Helper tables generated successfully in {int(minutes)} minutes and {seconds:.2f} seconds."
-        )
+    # sqs_handler.delete_all_sqs_messages(sqs_queue_url)
+
+    # with st.spinner(
+    #     "Generating helper tables, this may take approximately 5 minutes..."
+    # ):
+    #     start_time = time.time()
+    #     st.write(
+    #         f"Generating helper tables start time: {datetime.fromtimestamp(start_time).strftime('%Y-%m-%d %H:%M:%S')}"
+    #     )
+    #     # generate_helper_tables()
+    #     time_taken = time.time() - start_time
+    #     minutes, seconds = divmod(time_taken, 60)
+    #     st.write(
+    #         f"Helper tables generated successfully in {int(minutes)} minutes and {seconds:.2f} seconds."
+    #     )
 
     events_handler = events.EventsHandler()
 
@@ -150,16 +151,43 @@ def handle_ebay_queue(sqs_queue_url: str) -> None:
         time.sleep(10)
 
 
+def load_ebay_table(s3_handler) -> pd.DataFrame:
+
+    folders = s3_handler.list_objects(PROJECT_BUCKET_NAME, "ebay/table/")
+
+    folder_paths = [
+        (folder["Key"].split("/")[-2], folder["Key"])
+        for folder in folders
+        if folder["Key"].endswith(".parquet")
+    ]
+
+    if not folder_paths:
+        raise ValueError("No parquet files found in the specified S3 path.")
+
+    latest_timestamp = max([path[0] for path in folder_paths if len(path[0]) == 19])
+
+    folder_paths = [
+        (timestamp, key)
+        for timestamp, key in folder_paths
+        if timestamp == latest_timestamp
+    ]
+
+    dfs = []
+    for _, folder_path in folder_paths:
+        parquet_data = s3_handler.load_parquet_from_s3(PROJECT_BUCKET_NAME, folder_path)
+        df = pd.read_parquet(io.BytesIO(parquet_data))
+        dfs.append(df)
+
+    return pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
+
+
 def generate_ebay_upload_files() -> None:
     sqs_queue_url = "rtg-automotive-lambda-queue"
     handle_ebay_queue(sqs_queue_url)
 
     s3_handler = s3.S3Handler()
-    parquet_data = s3_handler.load_parquet_from_s3(
-        PROJECT_BUCKET_NAME, "ebay/table/data.parquet"
-    )
 
-    df = pd.read_parquet(io.BytesIO(parquet_data))
+    df = load_ebay_table(s3_handler)
 
     ebay_df = create_ebay_dataframe(df)
     stores = list(ebay_df["Store"].unique())
