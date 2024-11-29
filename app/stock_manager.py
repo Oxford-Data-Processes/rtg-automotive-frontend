@@ -195,7 +195,7 @@ def load_ebay_table(s3_handler) -> pd.DataFrame:
     return pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
 
 
-def generate_ebay_upload_files(logs_handler: logs.LogsHandler) -> None:
+def generate_ebay_upload_files(logs_handler) -> None:
     sqs_queue_url = "rtg-automotive-lambda-queue"
     handle_ebay_queue(sqs_queue_url)
 
