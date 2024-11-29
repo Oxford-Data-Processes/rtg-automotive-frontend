@@ -82,13 +82,18 @@ def handle_file_uploads(
         for uploaded_file in uploaded_files:
             upload_file_to_s3(uploaded_file, bucket_name, date, s3_handler)
         st.success("Files uploaded successfully")
-        time.sleep(len(uploaded_files) * 20)
-        messages = sqs_handler.get_all_sqs_messages(sqs_queue_url)[
-            -len(uploaded_files) :
-        ]
-        st.write("--------------------------------------------------")
-        for message in messages:
-            st.write(message["Body"])
+        with st.spinner("Waiting for files to be processed, about 1 minute per file."):
+            start_time = time.time()
+            st.write(
+                f"Processing {len(uploaded_files)} files...\nStart time: {datetime.fromtimestamp(start_time).strftime('%Y-%m-%d %H:%M:%S')}"
+            )
+            time.sleep(len(uploaded_files) * 60)
+            messages = sqs_handler.get_all_sqs_messages(sqs_queue_url)[
+                -len(uploaded_files) :
+            ]
+            st.write("--------------------------------------------------")
+            for message in messages:
+                st.write(message["Body"])
     else:
         st.warning("Please upload at least one file first.")
 
@@ -154,7 +159,7 @@ def handle_ebay_queue(sqs_queue_url: str) -> None:
     ):
         start_time = time.time()
         st.write(
-            f"Generating eBay upload files start time: {datetime.fromtimestamp(start_time).strftime('%Y-%m-%d %H:%M:%S')}"
+            f"Generating eBay upload files...\nStart time: {datetime.fromtimestamp(start_time).strftime('%Y-%m-%d %H:%M:%S')}"
         )
         time.sleep(10)
 
@@ -241,7 +246,7 @@ def main() -> None:
         ):
             start_time = time.time()
         st.write(
-            f"Generating helper tables start time: {datetime.fromtimestamp(start_time).strftime('%Y-%m-%d %H:%M:%S')}"
+            f"Generating helper tables...\nStart time: {datetime.fromtimestamp(start_time).strftime('%Y-%m-%d %H:%M:%S')}"
         )
         generate_helper_tables()
         time_taken = time.time() - start_time
