@@ -84,8 +84,9 @@ def handle_file_uploads(
         st.success("Files uploaded successfully")
         with st.spinner("Waiting for files to be processed, about 1 minute per file."):
             start_time = time.time()
+            st.write(f"Processing {len(uploaded_files)} files...")
             st.write(
-                f"Processing {len(uploaded_files)} files...\nStart time: {datetime.fromtimestamp(start_time).strftime('%Y-%m-%d %H:%M:%S')}"
+                f"Start time: {datetime.fromtimestamp(start_time).strftime('%Y-%m-%d %H:%M:%S')}"
             )
             time.sleep(len(uploaded_files) * 60)
             messages = sqs_handler.get_all_sqs_messages(sqs_queue_url)[
@@ -159,7 +160,7 @@ def handle_ebay_queue(sqs_queue_url: str) -> None:
     ):
         start_time = time.time()
         st.write(
-            f"Generating eBay upload files...\nStart time: {datetime.fromtimestamp(start_time).strftime('%Y-%m-%d %H:%M:%S')}"
+            f"Start time: {datetime.fromtimestamp(start_time).strftime('%Y-%m-%d %H:%M:%S')}"
         )
         time.sleep(10)
 
@@ -246,7 +247,7 @@ def main() -> None:
         ):
             start_time = time.time()
         st.write(
-            f"Generating helper tables...\nStart time: {datetime.fromtimestamp(start_time).strftime('%Y-%m-%d %H:%M:%S')}"
+            f"Start time: {datetime.fromtimestamp(start_time).strftime('%Y-%m-%d %H:%M:%S')}"
         )
         generate_helper_tables()
         time_taken = time.time() - start_time
