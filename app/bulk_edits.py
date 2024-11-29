@@ -142,7 +142,6 @@ def edit_table(df: pd.DataFrame, table_name: str, edit_type: str) -> None:
                     }
                     api_utils.post_request("items", params)
 
-                iam.get_aws_credentials(st.secrets["aws_credentials"])
                 logs_handler = logs.LogsHandler()
                 logs_handler.log_action(
                     f"rtg-automotive-bucket-{os.environ['AWS_ACCOUNT_ID']}",
