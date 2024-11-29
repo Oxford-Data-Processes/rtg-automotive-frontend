@@ -6,6 +6,9 @@ import pandas as pd
 import streamlit as st
 from aws_utils import iam, logs
 import json
+from typing import Tuple
+
+from database import run_query
 
 
 def get_table_columns() -> Dict[str, Dict[str, Any]]:
@@ -41,15 +44,31 @@ def get_table_columns() -> Dict[str, Dict[str, Any]]:
     }
 
 
-def get_options(table_name: str, partition_column: str) -> List[str]:
-    params = {
-        "table_name": table_name,
-        "columns": ",".join([partition_column]),
-        "limit": 10000,
-    }
+@st.cache_data
+def get_suppliers() -> Tuple[List[Tuple[Any]], List[str]]:
+    query = "SELECT DISTINCT(supplier) FROM supplier_stock;"
+    return run_query(query)
 
-    results = api_utils.get_request("items", params)
-    return list(set([result[partition_column] for result in results]))
+
+@st.cache_data
+def get_ebay_stores() -> Tuple[List[Tuple[Any]], List[str]]:
+    query = "SELECT DISTINCT(ebay_store) FROM store;"
+    return run_query(query)
+
+
+def get_options(table_name: str) -> Tuple[List[str], str]:
+    if table_name == "supplier_stock":
+        results, _ = get_suppliers()
+        results = list(set(results))
+        results = [result[0] for result in results]
+        results.sort()
+        return (results, "supplier")
+    else:
+        results, _ = get_ebay_stores()
+        results = list(set(results))
+        results = [result[0] for result in results]
+        results.sort()
+        return (results, "ebay_store")
 
 
 def display_title() -> None:
@@ -97,7 +116,7 @@ def display_data_types(
             (
                 c["type"]
                 for c in table_columns[table_name]["columns"]
-                if c["name"] == col
+                if c["name"] in col
             ),
             "Text",
         )
@@ -165,11 +184,12 @@ def main() -> None:
     selected_columns = get_selected_columns(table_name, table_columns, edit_type)
     display_data_types(table_name, table_columns, selected_columns)
 
-    options = get_options(table_name, table_columns[table_name]["partition_column"])
+    options, partition_column = get_options(table_name)
+    print(options)
     selected_value = st.selectbox(
-        f"Select {table_columns[table_name]['partition_column']}",
-        options=sorted(options),
-        index=0,
+        f"Select {partition_column}",
+        options=options,
+        index=None,
     )
     st.write("Selected Value:", selected_value)
 

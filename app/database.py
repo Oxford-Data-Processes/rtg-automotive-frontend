@@ -1,6 +1,6 @@
 import os
 import time
-
+from typing import Any, List, Tuple
 import mysql.connector
 from aws_utils import iam, rds
 from mysql.connector import Error
@@ -32,7 +32,7 @@ def create_connection():
         return None
 
 
-def run_query(query: str):
+def run_query(query: str) -> Tuple[List[Tuple[Any]], List[str]]:
     """Run a query using the connection.
 
     Returns:

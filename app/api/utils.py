@@ -12,7 +12,7 @@ api_id = api_gateway_handler.search_api_by_name("rtg-automotive-api")
 
 BASE_URL = f"https://{api_id}.execute-api.{os.environ['AWS_REGION']}.amazonaws.com/{STAGE.lower()}/"
 
-# BASE_URL = "http://localhost:8000/"
+BASE_URL = "http://localhost:8000/"
 
 
 def get_request(endpoint, params=None):

@@ -145,7 +145,10 @@ def run_query(
 ) -> None:
     if st.button("Run Query"):
         del params["split_by_column"]
-        results = get_table_from_s3(table_selection)
+        if params["limit"] == 0:
+            results = get_table_from_s3(table_selection)
+        else:
+            results = api_utils.get_request("items", params)
         if results:
             display_results(results, table_selection, split_by_column)
         else:
@@ -211,7 +214,7 @@ def clear_filters_button() -> None:
 
 def get_result_limit() -> int:
     return st.number_input(
-        "Number of results to display (default is 10, set it to 0 for ALL)",
+        "Number of results to return (default is 10, set it to 0 for ALL)",
         value=10,
         format="%d",
         min_value=0,
