@@ -85,7 +85,9 @@ def get_filter_values(
 
 
 def convert_to_excel(data: List[Dict[str, Any]]) -> bytes:
+
     df = pd.DataFrame(data)
+
     output = BytesIO()
     df.to_excel(output, index=False, engine="openpyxl")
     output.seek(0)
@@ -135,12 +137,15 @@ def create_split_downloads(
     results_df = pd.DataFrame(results)
     if split_by_column in results_df.columns:
         unique_values = results_df[split_by_column].unique()
+        print("unique values")
+        print(unique_values)
         data_dictionary = {}
         for value in unique_values:
             filtered_results = results_df[results_df[split_by_column] == value]
             data_dictionary[f"{table_selection}_{split_by_column}_{value}.xlsx"] = (
                 convert_to_excel(filtered_results.to_dict(orient="records"))
             )
+            print(data_dictionary.keys())
         download_excels_as_zip(data_dictionary)
     else:
         st.write(f"Column '{split_by_column}' not found in results.")

@@ -33,14 +33,24 @@ def create_connection():
 
 
 def run_query(query: str):
-    """Run a query using the connection."""
+    """Run a query using the connection.
+
+    Returns:
+        tuple: (results, columns) where results is a list of rows and columns is a list of column names
+        None: if there's an error
+    """
     connection = create_connection()
     if connection:
         cursor = connection.cursor()
         try:
             cursor.execute(query)
-            result = cursor.fetchall()
-            return result
+            if query.strip().upper().startswith("SELECT"):
+                result = cursor.fetchall()
+                # Get column names from cursor description
+                columns = [column[0] for column in cursor.description]
+                return result, columns
+            else:
+                return None  # No results or columns for non-SELECT queries
         except Error as e:
             print("Error executing query:", e)
             return None
