@@ -140,7 +140,7 @@ def generate_helper_tables() -> None:
 def handle_ebay_queue(sqs_queue_url: str) -> None:
     sqs_handler = sqs.SQSHandler()
 
-    # sqs_handler.delete_all_sqs_messages(sqs_queue_url)
+    sqs_handler.delete_all_sqs_messages(sqs_queue_url)
 
     events_handler = events.EventsHandler()
 
@@ -165,7 +165,6 @@ def handle_ebay_queue(sqs_queue_url: str) -> None:
 
         while True:
             messages = sqs_handler.get_all_sqs_messages(sqs_queue_url)
-            st.write(messages)
             for message in messages:
                 if "Ebay table generated" in message["Body"]:
                     time_taken = time.time() - start_time
