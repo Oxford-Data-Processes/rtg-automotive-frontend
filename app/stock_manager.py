@@ -119,8 +119,8 @@ def create_parquet_file_from_table(table_name: str, columns: str) -> None:
 
 def generate_helper_tables() -> None:
 
-    create_parquet_file_from_table("supplier_stock", "part_number,custom_label")
-    create_parquet_file_from_table("store", "custom_label")
+    create_parquet_file_from_table("supplier_stock", "*")
+    create_parquet_file_from_table("store", "*")
 
     run_query("DROP TABLE IF EXISTS supplier_stock_ranked;")
     supplier_stock_ranked_file_path = os.path.join(
@@ -262,21 +262,21 @@ def main() -> None:
             "Building helper tables, this may take approximately 5 minutes..."
         ):
             start_time = time.time()
-        st.write(
-            f"Start time: {datetime.fromtimestamp(start_time).strftime('%Y-%m-%d %H:%M:%S')}"
-        )
-        generate_helper_tables()
-        time_taken = time.time() - start_time
-        minutes, seconds = divmod(time_taken, 60)
-        logs_handler.log_action(
-            f"rtg-automotive-bucket-{os.environ['AWS_ACCOUNT_ID']}",
-            "frontend",
-            f"HELPER_TABLES_GENERATED",
-            "admin",
-        )
-        st.success(
-            f"Helper tables generated successfully in {int(minutes)} minutes and {seconds:.2f} seconds."
-        )
+            st.write(
+                f"Start time: {datetime.fromtimestamp(start_time).strftime('%Y-%m-%d %H:%M:%S')}"
+            )
+            generate_helper_tables()
+            time_taken = time.time() - start_time
+            minutes, seconds = divmod(time_taken, 60)
+            logs_handler.log_action(
+                f"rtg-automotive-bucket-{os.environ['AWS_ACCOUNT_ID']}",
+                "frontend",
+                f"HELPER_TABLES_GENERATED",
+                "admin",
+            )
+            st.success(
+                f"Helper tables generated successfully in {int(minutes)} minutes and {seconds:.2f} seconds."
+            )
 
     uploaded_files = st.file_uploader(
         "Upload Excel files", type=["xlsx"], accept_multiple_files=True

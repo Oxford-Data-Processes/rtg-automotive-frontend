@@ -6,7 +6,8 @@ from typing import Dict, List, Any, Optional
 import api.utils as api_utils
 import pandas as pd
 import streamlit as st
-from aws_utils import iam
+from aws_utils import iam, s3
+import os
 
 
 def get_table_config() -> Dict[str, Dict[str, List[Dict[str, str]]]]:
@@ -85,11 +86,21 @@ def get_filter_values(
 
 
 def convert_to_excel(data: List[Dict[str, Any]]) -> bytes:
-
     df = pd.DataFrame(data)
 
-    output = BytesIO()
-    df.to_excel(output, index=False, engine="openpyxl")
+    # If dataframe exceeds Excel's row limit, split it into chunks
+    max_rows = 1000000  # Slightly less than Excel's limit for safety
+    if len(df) > max_rows:
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            # Split dataframe into chunks and write to different sheets
+            for i, chunk_start in enumerate(range(0, len(df), max_rows)):
+                chunk = df.iloc[chunk_start : chunk_start + max_rows]
+                chunk.to_excel(writer, sheet_name=f"Sheet_{i+1}", index=False)
+    else:
+        output = BytesIO()
+        df.to_excel(output, index=False, engine="openpyxl")
+
     output.seek(0)
     return output.getvalue()
 
@@ -109,12 +120,32 @@ def download_excels_as_zip(data_dictionary: Dict[str, bytes]) -> None:
     )
 
 
+def get_table_from_s3(table_name: str):
+    s3_handler = s3.S3Handler()
+    bucket_name = f"rtg-automotive-bucket-{os.environ['AWS_ACCOUNT_ID']}"
+
+    folders = s3_handler.list_objects(bucket_name, f"{table_name}/")
+    folder_paths = [
+        (folder["Key"].split("/")[-2], folder["Key"])
+        for folder in folders
+        if folder["Key"].endswith(".parquet")
+    ]
+    latest_file = sorted(folder_paths, key=lambda x: x[0], reverse=True)[0][1]
+    table_data = s3_handler.load_parquet_from_s3(bucket_name, latest_file)
+    df = pd.read_parquet(BytesIO(table_data))
+    table_dictionary = [
+        {col: row[col] for col in df.columns} for _, row in df.iterrows()
+    ]
+
+    return table_dictionary
+
+
 def run_query(
     params: Dict[str, Any], table_selection: str, split_by_column: str
 ) -> None:
     if st.button("Run Query"):
         del params["split_by_column"]
-        results = api_utils.get_request("items", params)
+        results = get_table_from_s3(table_selection)
         if results:
             display_results(results, table_selection, split_by_column)
         else:
@@ -124,11 +155,12 @@ def run_query(
 def display_results(
     results: List[Dict[str, Any]], table_selection: str, split_by_column: str
 ) -> None:
-    st.dataframe(pd.DataFrame(results))
-    if split_by_column:
-        create_split_downloads(results, table_selection, split_by_column)
-    else:
-        download_single_file(results, table_selection)
+    st.dataframe(pd.DataFrame(results[:100]))
+    with st.spinner("Building the Excel export..."):
+        if split_by_column:
+            create_split_downloads(results, table_selection, split_by_column)
+        else:
+            download_single_file(results, table_selection)
 
 
 def create_split_downloads(
@@ -137,8 +169,6 @@ def create_split_downloads(
     results_df = pd.DataFrame(results)
     if split_by_column in results_df.columns:
         unique_values = results_df[split_by_column].unique()
-        print("unique values")
-        print(unique_values)
         data_dictionary = {}
         for value in unique_values:
             filtered_results = results_df[results_df[split_by_column] == value]
