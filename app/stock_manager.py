@@ -241,6 +241,8 @@ def main() -> None:
 
     sqs_queue_url = "rtg-automotive-lambda-queue"
 
+    logs_handler = logs.LogsHandler()
+
     if st.button("Build Helper Tables"):
         with st.spinner(
             "Building helper tables, this may take approximately 5 minutes..."
@@ -252,7 +254,6 @@ def main() -> None:
         generate_helper_tables()
         time_taken = time.time() - start_time
         minutes, seconds = divmod(time_taken, 60)
-        logs_handler = logs.LogsHandler()
         logs_handler.log_action(
             f"rtg-automotive-bucket-{os.environ['AWS_ACCOUNT_ID']}",
             "frontend",
