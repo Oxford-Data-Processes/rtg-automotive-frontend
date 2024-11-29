@@ -82,7 +82,7 @@ def handle_file_uploads(
         for uploaded_file in uploaded_files:
             upload_file_to_s3(uploaded_file, bucket_name, date, s3_handler)
         st.success("Files uploaded successfully")
-        time.sleep(len(uploaded_files) * 5)
+        time.sleep(len(uploaded_files) * 20)
         messages = sqs_handler.get_all_sqs_messages(sqs_queue_url)[
             -len(uploaded_files) :
         ]
@@ -112,21 +112,21 @@ def generate_helper_tables() -> None:
 def handle_ebay_queue(sqs_queue_url: str) -> None:
     sqs_handler = sqs.SQSHandler()
 
-    # sqs_handler.delete_all_sqs_messages(sqs_queue_url)
+    sqs_handler.delete_all_sqs_messages(sqs_queue_url)
 
-    # with st.spinner(
-    #     "Generating helper tables, this may take approximately 5 minutes..."
-    # ):
-    #     start_time = time.time()
-    #     st.write(
-    #         f"Generating helper tables start time: {datetime.fromtimestamp(start_time).strftime('%Y-%m-%d %H:%M:%S')}"
-    #     )
-    #     # generate_helper_tables()
-    #     time_taken = time.time() - start_time
-    #     minutes, seconds = divmod(time_taken, 60)
-    #     st.write(
-    #         f"Helper tables generated successfully in {int(minutes)} minutes and {seconds:.2f} seconds."
-    #     )
+    with st.spinner(
+        "Generating helper tables, this may take approximately 5 minutes..."
+    ):
+        start_time = time.time()
+        st.write(
+            f"Generating helper tables start time: {datetime.fromtimestamp(start_time).strftime('%Y-%m-%d %H:%M:%S')}"
+        )
+        generate_helper_tables()
+        time_taken = time.time() - start_time
+        minutes, seconds = divmod(time_taken, 60)
+        st.write(
+            f"Helper tables generated successfully in {int(minutes)} minutes and {seconds:.2f} seconds."
+        )
 
     events_handler = events.EventsHandler()
 
@@ -196,10 +196,12 @@ def generate_ebay_upload_files() -> None:
         for store in stores
     ]
 
-    today_date = datetime.now().strftime("%Y-%m-%d")
+    timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
     zip_data = zip_dataframes(ebay_dfs).getvalue()
     s3_handler.upload_generic_file_to_s3(
-        PROJECT_BUCKET_NAME, f"ebay/{today_date}/ebay_upload_files.zip", zip_data
+        PROJECT_BUCKET_NAME,
+        f"ebay/zip_folders/{timestamp}/ebay_upload_files.zip",
+        zip_data,
     )
 
     st.download_button(

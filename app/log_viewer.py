@@ -12,7 +12,7 @@ def load_logs(logs_handler: logs.LogsHandler, bucket_name: str) -> None:
     log_df: pd.DataFrame = pd.DataFrame(log_messages).sort_values(
         by="timestamp", ascending=False
     )
-    st.dataframe(log_df, use_container_width=True)
+    st.dataframe(log_df.drop(columns=["log_id"]), use_container_width=True)
 
 
 def main() -> None:

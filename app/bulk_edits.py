@@ -5,6 +5,7 @@ import api.utils as api_utils
 import pandas as pd
 import streamlit as st
 from aws_utils import iam, logs
+import json
 
 
 def get_table_columns() -> Dict[str, Dict[str, Any]]:
@@ -98,7 +99,7 @@ def display_data_types(
                 for c in table_columns[table_name]["columns"]
                 if c["name"] == col
             ),
-            None,
+            "Text",
         )
         for col in selected_columns
     }
@@ -132,12 +133,12 @@ def edit_table(df: pd.DataFrame, table_name: str, edit_type: str) -> None:
     if st.button("Edit Table"):
         try:
             with st.spinner("Editing table..."):
-                json_data = df.to_json(orient="records")
+                json_data = json.loads(df.to_json(orient="records"))
                 for item in json_data:
                     params = {
                         "table_name": table_name,
                         "type": edit_type,
-                        "payload": item,
+                        "payload": json.dumps(item),
                     }
                     api_utils.post_request("items", params)
 
@@ -168,7 +169,7 @@ def main() -> None:
     options = get_options(table_name, table_columns[table_name]["partition_column"])
     selected_value = st.selectbox(
         f"Select {table_columns[table_name]['partition_column']}",
-        options=options,
+        options=sorted(options),
         index=0,
     )
     st.write("Selected Value:", selected_value)

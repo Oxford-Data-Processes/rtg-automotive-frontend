@@ -138,8 +138,8 @@ def create_split_downloads(
         data_dictionary = {}
         for value in unique_values:
             filtered_results = results_df[results_df[split_by_column] == value]
-            data_dictionary[f"{table_selection}_{value}.xlsx"] = convert_to_excel(
-                filtered_results.to_dict(orient="records")
+            data_dictionary[f"{table_selection}_{split_by_column}_{value}.xlsx"] = (
+                convert_to_excel(filtered_results.to_dict(orient="records"))
             )
         download_excels_as_zip(data_dictionary)
     else:

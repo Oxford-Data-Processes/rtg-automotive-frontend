@@ -16,19 +16,17 @@ BASE_URL = f"https://{api_id}.execute-api.{os.environ['AWS_REGION']}.amazonaws.c
 
 
 def get_request(endpoint, params=None):
+    print(f"GET REQUEST - Params: {params}")
     request_url = f"{BASE_URL}{endpoint}/"
-    print("\n")
-    print("REQUEST URL:")
-    print(request_url)
-    print("PARAMS:")
-    print(params)
     response = requests.get(request_url, params=params)
     return response.json()
 
 
 def post_request(endpoint, params=None):
+    print(f"POST REQUEST - Params: {params}")
+    request_url = f"{BASE_URL}{endpoint}/"
     response = requests.post(
-        f"{BASE_URL}{endpoint}/?table_name={params['table_name']}&type={params['type']}",
+        request_url,
         headers={"Content-Type": "application/json"},
         json=params["payload"],
     )
