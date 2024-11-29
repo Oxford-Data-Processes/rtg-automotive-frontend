@@ -3,14 +3,14 @@ import time
 import uuid
 import zipfile
 from datetime import datetime
-from typing import List, Tuple, Optional
+from typing import List, Tuple
 import os
 
 from database import run_query
 
 import pandas as pd
 import streamlit as st
-from aws_utils import events, iam, s3, sqs
+from aws_utils import events, iam, s3, sqs, logs
 from utils import PROJECT_BUCKET_NAME
 
 
@@ -189,7 +189,7 @@ def load_ebay_table(s3_handler) -> pd.DataFrame:
     return pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
 
 
-def generate_ebay_upload_files() -> None:
+def generate_ebay_upload_files(logs_handler: logs.LogsHandler) -> None:
     sqs_queue_url = "rtg-automotive-lambda-queue"
     handle_ebay_queue(sqs_queue_url)
 
@@ -212,6 +212,13 @@ def generate_ebay_upload_files() -> None:
         zip_data,
     )
 
+    logs_handler.log_action(
+        f"rtg-automotive-bucket-{os.environ['AWS_ACCOUNT_ID']}",
+        "frontend",
+        f"EBAY_UPLOAD_FILES_GENERATED",
+        "admin",
+    )
+
     st.download_button(
         label="Download eBay Upload Files",
         data=zip_data,
@@ -228,7 +235,7 @@ def main() -> None:
 
     sqs_queue_url = "rtg-automotive-lambda-queue"
 
-    if st.button("Build helper tables"):
+    if st.button("Build Helper Tables"):
         with st.spinner(
             "Building helper tables, this may take approximately 5 minutes..."
         ):
@@ -239,7 +246,14 @@ def main() -> None:
         generate_helper_tables()
         time_taken = time.time() - start_time
         minutes, seconds = divmod(time_taken, 60)
-        st.write(
+        logs_handler = logs.LogsHandler()
+        logs_handler.log_action(
+            f"rtg-automotive-bucket-{os.environ['AWS_ACCOUNT_ID']}",
+            "frontend",
+            f"HELPER_TABLES_GENERATED",
+            "admin",
+        )
+        st.success(
             f"Helper tables generated successfully in {int(minutes)} minutes and {seconds:.2f} seconds."
         )
 
@@ -261,4 +275,4 @@ def main() -> None:
             st.warning("Please upload at least one file first.")
 
     if st.button("Generate eBay Store Upload Files"):
-        generate_ebay_upload_files()
+        generate_ebay_upload_files(logs_handler)
