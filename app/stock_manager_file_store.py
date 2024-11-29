@@ -18,7 +18,11 @@ def main() -> None:
     s3_handler = s3.S3Handler()
     objects = s3_handler.list_objects(bucket_name, "ebay/zip_folders/")
 
-    for object in objects:
+    # Sort objects by timestamp (the second last part of the key)
+    objects.sort(key=lambda obj: obj["Key"].split("/")[-2], reverse=True)
+
+    # Limit to the latest 20 items
+    for object in objects[:20]:
         file_name = object["Key"].split("/")[-1]
         timestamp = object["Key"].split("/")[-2]
         zip_buffer = io.BytesIO()
