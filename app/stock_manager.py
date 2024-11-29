@@ -140,7 +140,7 @@ def generate_helper_tables() -> None:
 def handle_ebay_queue(sqs_queue_url: str) -> None:
     sqs_handler = sqs.SQSHandler()
 
-    sqs_handler.delete_all_sqs_messages(sqs_queue_url)
+    # sqs_handler.delete_all_sqs_messages(sqs_queue_url)
 
     events_handler = events.EventsHandler()
 
@@ -162,7 +162,22 @@ def handle_ebay_queue(sqs_queue_url: str) -> None:
         st.write(
             f"Start time: {datetime.fromtimestamp(start_time).strftime('%Y-%m-%d %H:%M:%S')}"
         )
-        time.sleep(10)
+
+        while True:
+            messages = sqs_handler.get_all_sqs_messages(sqs_queue_url)
+            st.write(messages)
+            for message in messages:
+                if "Ebay table generated" in message["Body"]:
+                    time_taken = time.time() - start_time
+                    minutes, seconds = divmod(time_taken, 60)
+                    st.success(
+                        f"Ebay upload files generated successfully in {int(minutes)} minutes and {seconds:.2f} seconds."
+                    )
+                    break
+            else:
+                time.sleep(10)
+                continue
+            break
 
 
 def load_ebay_table(s3_handler) -> pd.DataFrame:
