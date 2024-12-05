@@ -6,8 +6,6 @@ from datetime import datetime
 from typing import List, Tuple
 import os
 
-from database import run_query
-
 import pandas as pd
 import streamlit as st
 from aws_utils import events, iam, s3, sqs, logs
@@ -97,44 +95,6 @@ def handle_file_uploads(
                 st.write(message["Body"])
     else:
         st.warning("Please upload at least one file first.")
-
-
-def create_parquet_file_from_table(table_name: str, columns: str) -> None:
-    query = f"SELECT {columns} FROM {table_name};"
-
-    result, columns = run_query(query)
-    df = pd.DataFrame(result, columns=columns)
-
-    print(len(df))
-    print(df.head())
-
-    current_timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-    s3_handler = s3.S3Handler()
-    bucket_name = f"rtg-automotive-bucket-{os.environ['AWS_ACCOUNT_ID']}"
-
-    filename = f"{table_name}/{current_timestamp}/{uuid.uuid4()}.parquet"
-
-    s3_handler.upload_parquet_to_s3(bucket_name, filename, df.to_parquet())
-
-
-def generate_helper_tables() -> None:
-
-    create_parquet_file_from_table("supplier_stock", "*")
-    create_parquet_file_from_table("store", "*")
-
-    run_query("DROP TABLE IF EXISTS supplier_stock_ranked;")
-    supplier_stock_ranked_file_path = os.path.join(
-        os.path.dirname(__file__), "sql", "supplier_stock_ranked.sql"
-    )
-    supplier_stock_ranked_sql = open(supplier_stock_ranked_file_path).read()
-    run_query(supplier_stock_ranked_sql)
-
-    run_query("DROP TABLE IF EXISTS store_filtered;")
-    store_filtered_file_path = os.path.join(
-        os.path.dirname(__file__), "sql", "store_filtered.sql"
-    )
-    store_filtered_sql = open(store_filtered_file_path).read()
-    run_query(store_filtered_sql)
 
 
 def handle_ebay_queue(sqs_queue_url: str) -> None:
@@ -256,27 +216,6 @@ def main() -> None:
     sqs_queue_url = "rtg-automotive-lambda-queue"
 
     logs_handler = logs.LogsHandler()
-
-    if st.button("Build Helper Tables"):
-        with st.spinner(
-            "Building helper tables, this may take approximately 5 minutes..."
-        ):
-            start_time = time.time()
-            st.write(
-                f"Start time: {datetime.fromtimestamp(start_time).strftime('%Y-%m-%d %H:%M:%S')}"
-            )
-            generate_helper_tables()
-            time_taken = time.time() - start_time
-            minutes, seconds = divmod(time_taken, 60)
-            logs_handler.log_action(
-                f"rtg-automotive-bucket-{os.environ['AWS_ACCOUNT_ID']}",
-                "frontend",
-                f"HELPER_TABLES_GENERATED",
-                "admin",
-            )
-            st.success(
-                f"Helper tables generated successfully in {int(minutes)} minutes and {seconds:.2f} seconds."
-            )
 
     uploaded_files = st.file_uploader(
         "Upload Excel files", type=["xlsx"], accept_multiple_files=True
