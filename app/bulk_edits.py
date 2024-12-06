@@ -44,29 +44,42 @@ def get_table_columns() -> Dict[str, Dict[str, Any]]:
     }
 
 
-@st.cache_data
 def get_suppliers() -> Tuple[List[Tuple[Any]], List[str]]:
-    query = "SELECT DISTINCT(supplier) FROM supplier_stock;"
-    return run_query(query)
+    return [
+        "APE",
+        "BET",
+        "BGA",
+        "COM",
+        "FAI",
+        "FEB",
+        "FIR",
+        "FPS",
+        "JUR",
+        "KLA",
+        "KYB",
+        "MOT",
+        "RFX",
+        "ROL",
+        "RTG",
+        "SMP",
+        "UKC",
+    ]
 
 
 @st.cache_data
 def get_ebay_stores() -> Tuple[List[Tuple[Any]], List[str]]:
-    query = "SELECT DISTINCT(ebay_store) FROM store;"
-    return run_query(query)
+    return ["RTG", "CPO", "SJR", "PV", "MFD", "AST", "DPW", "AMS", "GCP", "OR", "PG"]
 
 
 def get_options(table_name: str) -> Tuple[List[str], str]:
     if table_name == "supplier_stock":
-        results, _ = get_suppliers()
+        results = get_suppliers()
         results = list(set(results))
-        results = [result[0] for result in results]
         results.sort()
         return (results, "supplier")
     else:
-        results, _ = get_ebay_stores()
+        results = get_ebay_stores()
         results = list(set(results))
-        results = [result[0] for result in results]
         results.sort()
         return (results, "ebay_store")
 

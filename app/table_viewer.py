@@ -23,6 +23,7 @@ def get_table_config() -> Dict[str, Dict[str, List[Dict[str, str]]]]:
         "supplier_stock": {
             "filter_columns": [
                 {"name": "part_number", "type": "text"},
+                {"name": "custom_label", "type": "text"},
                 {"name": "supplier", "type": "text"},
                 {"name": "updated_date", "type": "text"},
             ],
