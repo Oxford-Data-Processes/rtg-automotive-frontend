@@ -120,7 +120,7 @@ def download_excels_as_zip(data_dictionary: Dict[str, bytes]) -> None:
     )
 
 
-def get_table_from_s3(table_name: str):
+def get_table_from_s3(table_name: str) -> List[Dict[str, Any]]:
     s3_handler = s3.S3Handler()
     bucket_name = f"rtg-automotive-bucket-{os.environ['AWS_ACCOUNT_ID']}"
 
@@ -149,6 +149,8 @@ def run_query(
             results = get_table_from_s3(table_selection)
         else:
             results = api_utils.get_request("items", params)
+            print(results)
+            print(type(results))
         if results:
             display_results(results, table_selection, split_by_column)
         else:
@@ -191,7 +193,7 @@ def download_single_file(results: List[Dict[str, Any]], table_selection: str) ->
 
 def select_table(config: Dict[str, Any]) -> str:
     return st.selectbox(
-        "Select a table", options=list(config.keys()), key="table_selection"
+        "Select Table name", options=sorted(list(config.keys())), key="table_selection"
     )
 
 
@@ -222,6 +224,7 @@ def get_result_limit() -> int:
 
 
 def build_query_params(table_selection: str, result_limit: int) -> Dict[str, Any]:
+    print("Filters: ", st.session_state.filters)
     return {
         "table_name": table_selection,
         "filters": json.dumps(st.session_state.filters),

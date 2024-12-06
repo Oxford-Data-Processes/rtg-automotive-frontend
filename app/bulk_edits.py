@@ -76,7 +76,9 @@ def display_title() -> None:
 
 
 def select_table_name(table_columns: Dict[str, Dict[str, Any]]) -> str:
-    return st.selectbox("Select Table Name", list(table_columns.keys()))
+    return st.selectbox(
+        "Select Table Name", sorted(list(table_columns.keys())), key="table_name"
+    )
 
 
 def select_edit_type() -> str:
