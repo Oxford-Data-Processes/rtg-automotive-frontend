@@ -185,17 +185,11 @@ def edit_table(df: pd.DataFrame, table_name: str, edit_type: str) -> None:
         try:
             with st.spinner("Editing table..."):
                 json_data = json.loads(df.to_json(orient="records"))
-                print("JSON DATA")
-                print(type(json_data))
-                print(json_data)
                 params = {
                     "table_name": table_name,
                     "type": edit_type,
                     "payload": {"items": json_data},
                 }
-                print("PARAMS")
-                print(type(params))
-                print(params)
                 api_utils.post_request("items", params)
 
                 logs_handler = logs.LogsHandler()

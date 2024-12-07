@@ -150,8 +150,6 @@ def run_query(
             results = get_table_from_s3(table_selection)
         else:
             results = api_utils.get_request("items", params)
-            print(results)
-            print(type(results))
         if results:
             display_results(results, table_selection, split_by_column)
         else:
@@ -185,7 +183,6 @@ def create_split_downloads(
             data_dictionary[f"{table_selection}_{split_by_column}_{value}.xlsx"] = (
                 convert_to_excel(filtered_results.to_dict(orient="records"))
             )
-            print(data_dictionary.keys())
         download_excels_as_zip(data_dictionary)
     else:
         st.write(f"Column '{split_by_column}' not found in results.")
@@ -229,7 +226,6 @@ def get_result_limit() -> int:
 
 
 def build_query_params(table_selection: str, result_limit: int) -> Dict[str, Any]:
-    print("Filters: ", st.session_state.filters)
     return {
         "table_name": table_selection,
         "filters": json.dumps(st.session_state.filters),
