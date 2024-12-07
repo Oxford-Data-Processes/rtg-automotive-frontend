@@ -68,7 +68,24 @@ def get_suppliers() -> Tuple[List[Tuple[Any]], List[str]]:
 
 @st.cache_data
 def get_ebay_stores() -> Tuple[List[Tuple[Any]], List[str]]:
-    return ["RTG", "CPO", "SJR", "PV", "MFD", "AST", "DPW", "AMS", "GCP", "OR", "PG"]
+    return [
+        "AMS",
+        "AST",
+        "CPO_FPS",
+        "CPO_RTG",
+        "CPO_UKD",
+        "DPW",
+        "GCP",
+        "MFD",
+        "OR",
+        "PG",
+        "PV",
+        "RTG_FPS",
+        "RTG_RTG",
+        "RTG_UKD",
+        "RTG_UMD",
+        "SJR",
+    ]
 
 
 def get_options(table_name: str) -> Tuple[List[str], str]:
@@ -168,13 +185,18 @@ def edit_table(df: pd.DataFrame, table_name: str, edit_type: str) -> None:
         try:
             with st.spinner("Editing table..."):
                 json_data = json.loads(df.to_json(orient="records"))
-                for item in json_data:
-                    params = {
-                        "table_name": table_name,
-                        "type": edit_type,
-                        "payload": json.dumps(item),
-                    }
-                    api_utils.post_request("items", params)
+                print("JSON DATA")
+                print(type(json_data))
+                print(json_data)
+                params = {
+                    "table_name": table_name,
+                    "type": edit_type,
+                    "payload": {"items": json_data},
+                }
+                print("PARAMS")
+                print(type(params))
+                print(params)
+                api_utils.post_request("items", params)
 
                 logs_handler = logs.LogsHandler()
                 logs_handler.log_action(

@@ -25,7 +25,9 @@ def get_request(endpoint, params=None) -> List[Dict[str, Any]]:
 
 def post_request(endpoint, params=None):
     print(f"POST REQUEST - Params: {params}")
-    request_url = f"{BASE_URL}{endpoint}/"
+    request_url = (
+        f"{BASE_URL}{endpoint}/?table_name={params['table_name']}&type={params['type']}"
+    )
     response = requests.post(
         request_url,
         headers={"Content-Type": "application/json"},
