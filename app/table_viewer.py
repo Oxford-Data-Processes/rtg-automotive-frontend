@@ -161,12 +161,16 @@ def run_query(
 def display_results(
     results: List[Dict[str, Any]], table_selection: str, split_by_column: str
 ) -> None:
-    st.dataframe(pd.DataFrame(results[:100]))
-    with st.spinner("Building the Excel export..."):
-        if split_by_column:
-            create_split_downloads(results, table_selection, split_by_column)
-        else:
-            download_single_file(results, table_selection)
+    if isinstance(results, dict) and results.get("error") == "No items found":
+        st.warning("No results found")
+        return None
+    else:
+        st.dataframe(pd.DataFrame(results[:100]))
+        with st.spinner("Building the Excel export..."):
+            if split_by_column:
+                create_split_downloads(results, table_selection, split_by_column)
+            else:
+                download_single_file(results, table_selection)
 
 
 def create_split_downloads(
