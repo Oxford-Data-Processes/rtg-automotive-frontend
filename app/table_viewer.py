@@ -159,8 +159,16 @@ def run_query(
 def display_results(
     results: List[Dict[str, Any]], table_selection: str, split_by_column: str
 ) -> None:
+    print("RESULTS")
+    print(results)
     if isinstance(results, dict) and results.get("error") == "No items found":
         st.warning("No results found")
+        return None
+    elif (
+        isinstance(results, dict)
+        and results.get("message") == "Endpoint request timed out"
+    ):
+        st.warning("Request timed out")
         return None
     else:
         st.dataframe(pd.DataFrame(results[:100]))
