@@ -88,9 +88,10 @@ def get_filter_values(
 
 def convert_to_excel(data: List[Dict[str, Any]]) -> bytes:
     df = pd.DataFrame(data)
+    df = df.sort_values(by=df.columns[0], ascending=True)
 
     # If dataframe exceeds Excel's row limit, split it into chunks
-    max_rows = 1000000  # Slightly less than Excel's limit for safety
+    max_rows = 10**6
     if len(df) > max_rows:
         output = BytesIO()
         with pd.ExcelWriter(output, engine="openpyxl") as writer:
@@ -131,12 +132,28 @@ def get_table_from_s3(table_name: str) -> List[Dict[str, Any]]:
         for folder in folders
         if folder["Key"].endswith(".parquet")
     ]
-    latest_file = sorted(folder_paths, key=lambda x: x[0], reverse=True)[0][1]
-    table_data = s3_handler.load_parquet_from_s3(bucket_name, latest_file)
-    df = pd.read_parquet(BytesIO(table_data))
-    table_dictionary = [
-        {col: row[col] for col in df.columns} for _, row in df.iterrows()
-    ]
+
+    if not folder_paths:
+        return []  # Return an empty list if no folders are found
+
+    latest_folder = "/".join(
+        sorted(folder_paths, key=lambda x: x[0], reverse=True)[0][1].split("/")[:-1]
+    )
+
+    files = s3_handler.list_objects(bucket_name, latest_folder)
+
+    table_dictionary = []
+
+    for file in files:
+        if file["Key"].endswith(".parquet"):
+            latest_file = file["Key"]
+
+            table_data = s3_handler.load_parquet_from_s3(bucket_name, latest_file)
+            df = pd.read_parquet(BytesIO(table_data))
+
+            table_dictionary.extend(
+                [{col: row[col] for col in df.columns} for _, row in df.iterrows()]
+            )
 
     return table_dictionary
 
@@ -159,8 +176,6 @@ def run_query(
 def display_results(
     results: List[Dict[str, Any]], table_selection: str, split_by_column: str
 ) -> None:
-    print("RESULTS")
-    print(results)
     if isinstance(results, dict) and results.get("error") == "No items found":
         st.warning("No results found")
         return None
@@ -183,6 +198,7 @@ def create_split_downloads(
     results: List[Dict[str, Any]], table_selection: str, split_by_column: str
 ) -> None:
     results_df = pd.DataFrame(results)
+    results_df = results_df.sort_values(by=results_df.columns[0], ascending=True)
     if split_by_column in results_df.columns:
         unique_values = results_df[split_by_column].unique()
         data_dictionary = {}
