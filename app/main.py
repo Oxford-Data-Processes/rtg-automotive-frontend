@@ -1,10 +1,12 @@
 import bulk_edits
+import ebay_upload_generator
 import log_viewer
 import stock_manager
 import stock_manager_config
 import stock_manager_file_store
-import streamlit as st
 import table_viewer
+
+import streamlit as st
 
 STAGE = st.secrets["aws_credentials"]["STAGE"]
 
@@ -37,6 +39,7 @@ if __name__ == "__main__":
         app_mode = st.sidebar.selectbox(
             "Choose the app",
             (
+                "Ebay Upload Generator",
                 "Stock Manager",
                 "Stock Manager Configuration",
                 "Stock Manager File Store",
@@ -46,7 +49,9 @@ if __name__ == "__main__":
             ),
         )
 
-        if app_mode == "Stock Manager":
+        if app_mode == "Ebay Upload Generator":
+            ebay_upload_generator.main()
+        elif app_mode == "Stock Manager":
             stock_manager.main()
         elif app_mode == "Stock Manager Configuration":
             stock_manager_config.main()
