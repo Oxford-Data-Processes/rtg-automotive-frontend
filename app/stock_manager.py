@@ -10,46 +10,6 @@ from aws_utils import iam, s3, sqs
 from utils import PROJECT_BUCKET_NAME
 
 
-def zip_dataframes(dataframes: List[Tuple[pd.DataFrame, str]]) -> io.BytesIO:
-    zip_buffer = io.BytesIO()
-    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-        for df, name in dataframes:
-            csv_buffer = io.StringIO()
-            df.to_csv(csv_buffer, index=False)
-            zip_file.writestr(f"{name}.csv", csv_buffer.getvalue())
-    return zip_buffer
-
-
-def create_ebay_dataframe(ebay_df: pd.DataFrame) -> pd.DataFrame:
-    ebay_df = ebay_df[ebay_df["quantity_delta"] != 0]
-    ebay_df = ebay_df.dropna(subset=["item_id"])
-
-    ebay_df = ebay_df.rename(
-        columns={
-            "custom_label": "CustomLabel",
-            "item_id": "ItemID",
-            "ebay_store": "Store",
-            "quantity": "Quantity",
-        }
-    )
-    ebay_df["Action"] = "Revise"
-    ebay_df["SiteID"] = "UK"
-    ebay_df["Currency"] = "GBP"
-    ebay_df = ebay_df[
-        [
-            "Action",
-            "ItemID",
-            "SiteID",
-            "Currency",
-            "Quantity",
-            "Store",
-        ]
-    ]
-    ebay_df["Quantity"] = ebay_df["Quantity"].astype(int)
-    ebay_df["ItemID"] = ebay_df["ItemID"].apply(lambda x: int(x) if x != "" else None)
-    return ebay_df
-
-
 def upload_file_to_s3(
     file: io.BytesIO, bucket_name: str, date: str, s3_handler: s3.S3Handler
 ) -> None:

@@ -2,6 +2,9 @@ import os
 import time
 from datetime import datetime
 import uuid
+import io
+import zipfile
+from typing import List, Tuple
 
 import pandas as pd
 import streamlit as st
@@ -80,6 +83,46 @@ def load_ebay_table(s3_handler) -> pd.DataFrame:
         dfs.append(df)
 
     return pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
+
+
+def create_ebay_dataframe(ebay_df: pd.DataFrame) -> pd.DataFrame:
+    ebay_df = ebay_df[ebay_df["quantity_delta"] != 0]
+    ebay_df = ebay_df.dropna(subset=["item_id"])
+
+    ebay_df = ebay_df.rename(
+        columns={
+            "custom_label": "CustomLabel",
+            "item_id": "ItemID",
+            "ebay_store": "Store",
+            "quantity": "Quantity",
+        }
+    )
+    ebay_df["Action"] = "Revise"
+    ebay_df["SiteID"] = "UK"
+    ebay_df["Currency"] = "GBP"
+    ebay_df = ebay_df[
+        [
+            "Action",
+            "ItemID",
+            "SiteID",
+            "Currency",
+            "Quantity",
+            "Store",
+        ]
+    ]
+    ebay_df["Quantity"] = ebay_df["Quantity"].astype(int)
+    ebay_df["ItemID"] = ebay_df["ItemID"].apply(lambda x: int(x) if x != "" else None)
+    return ebay_df
+
+
+def zip_dataframes(dataframes: List[Tuple[pd.DataFrame, str]]) -> io.BytesIO:
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        for df, name in dataframes:
+            csv_buffer = io.StringIO()
+            df.to_csv(csv_buffer, index=False)
+            zip_file.writestr(f"{name}.csv", csv_buffer.getvalue())
+    return zip_buffer
 
 
 def generate_ebay_upload_files(logs_handler) -> None:
